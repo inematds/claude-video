@@ -1,0 +1,17 @@
+# Changelog
+
+All notable changes to `/watch` are documented here.
+
+## [0.1.0] — 2026-04-24
+
+Initial marketplace release.
+
+### Added
+- `/watch <url-or-path> [question]` slash command.
+- yt-dlp download with native caption extraction (manual + auto-subs).
+- ffmpeg frame extraction with auto-scaled fps (≤2 fps, ≤100 frames, duration-aware budget).
+- `--start` / `--end` focused mode with denser frame budget and transcript range filtering.
+- Whisper fallback (Groq preferred, OpenAI secondary) for videos without captions.
+- `setup.py` preflight: silent `--check`, structured `--json`, and installer that auto-runs `brew install` on macOS.
+- Session-start hook that prints a one-line status on first run / partial config.
+- `.skill` bundle packaging for claude.ai upload via `scripts/build-skill.sh`.

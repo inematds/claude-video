@@ -28,14 +28,6 @@ With Claude Video `/watch` you can paste a URL or a local path, ask a question, 
 /watch https://youtu.be/dQw4w9WgXcQ what happens at the 30 second mark?
 ```
 
-## Why this exists
-
-I run a [YouTube channel](https://www.youtube.com/@bradbonanno) and a business, [Solaris Automation](https://www.solarisautomation.io/), so I'm constantly using video to keep up with content. If I see a YouTube video that's blowing up, I want to know how the creator structured the hook — what's on screen in the first 3 seconds, what they said, why it worked. That used to mean watching it myself with a notepad. Now I just paste the URL and ask.
-
-The other half is summarization. Most YouTube videos don't deserve 20 minutes of my attention. I hand the URL to Claude, it pulls the transcript, and tells me what actually happened. If the visual matters, frames come along too. If it's a podcast or a talking head, transcript is enough.
-
-Claude is great at reading and synthesizing — but until now, video was the one input I couldn't hand it. Pasting a YouTube link got you nothing useful. `/watch` closes that gap.
-
 ## What people actually use it for
 
 **Analyze someone else's content.** `/watch https://youtu.be/<viral-video> what hook did they open with?` Claude looks at the first frames, reads the opening transcript, breaks down the structure. Same for ad creative, competitor launches, podcast intros, anything where the *how* matters as much as the *what*.
@@ -45,10 +37,6 @@ Claude is great at reading and synthesizing — but until now, video was the one
 **Summarize a video.** `/watch https://youtu.be/<long-thing> summarize this` does the obvious thing — pulls the structure, the key moments, what was actually said and shown. Faster than watching at 2x.
 
 **Cut the hype out of an update video.** `/watch https://youtu.be/<launch-video> what's actually new — skip the hype` Strip a "game-changer" feature drop down to the few things that matter, so you get the substance without ten minutes of intro and overselling.
-
-**Jump to the one answer in a long tutorial.** `/watch https://youtu.be/<2hr-tutorial> how do they set up the webhook?` Instead of scrubbing an hour of video for a 30-second answer — or matching a vague transcript and watching anyway — Claude finds the moment and tells you what's on screen there.
-
-**Read a screen-share recording the transcript can't.** `/watch standup.mp4 what was on the shared screen when they decided?` When a meeting transcript collapses into "if you look here" and "make it look like this," the words stop carrying the meaning — the frames recover what was actually being shown.
 
 **Turn a playlist into notes.** `/watch https://youtu.be/<video> summarize this to a note` Run it across a series and file a per-video summary, so a channel or course becomes a searchable set of notes instead of hours you have to sit through.
 
@@ -76,49 +64,36 @@ Token cost is dominated by frames. Every frame is an image; image tokens add up 
 
 When the user names a moment ("around 2:30", "the last 30 seconds", "from 0:45 to 1:00"), pass `--start` / `--end`. Focused mode gets denser per-second budgets, capped at 2 fps. Far more useful than a sparse pass over the whole thing.
 
-## Frame deduplication — why you don't pay for held slides
+## Frame deduplication
 
-Sampling spreads frames evenly across time, but time isn't where the information is. A 10-minute screen recording that sits on one slide for 90 seconds gives you a dozen *pixel-for-pixel identical* frames of that slide — each one a separate image, each one billed in tokens. Even-sampling doesn't know they're the same; it just hands them all over.
+Frame selection — keyframes (`efficient`), scene-change detection (`balanced`/`token-burner`), or the uniform sampler it falls back to — can still surface near-identical frames: a screen recording that holds one slide for 90 seconds produces a dozen, each billed as a separate image. A dedup pass drops them before frames reach Claude. It runs by default on every frame mode (`--no-dedup` turns it off):
 
-So before the frames are handed to Claude, a dedup pass drops the ones that didn't change. It runs by default on every frame mode (`--no-dedup` turns it off). Here's the logic, end to end:
+1. One `ffmpeg` call scales each extracted JPEG to a 16×16 grayscale thumbnail. Everything after is pure-stdlib Python — no image libraries.
+2. For each frame, compute the **mean absolute difference** against the *last frame that was kept* (average per-pixel brightness change, 0–255 scale).
+3. If that difference is at or below the threshold (`2.0`), the frame is a near-duplicate and is dropped. Otherwise it's kept and becomes the new reference.
+4. The frame-budget cap applies *after* dedup, so the budget is spent on distinct frames.
 
-1. **Decode each frame to a tiny fingerprint.** One `ffmpeg` call scales every extracted JPEG down to a 16×16 grayscale thumbnail — 256 brightness values per frame. ffmpeg does the pixel decoding; everything after is pure-stdlib Python, no image libraries.
-2. **Measure how much changed.** For each frame, compute the **mean absolute difference** against the *last frame that was kept* — the average per-pixel brightness change on a 0–255 scale. This is a literal "how different are these two frames" number, not a heuristic.
-3. **Drop it if nothing meaningfully changed.** If that difference is at or below the threshold (`2.0` — i.e. the picture moved less than ~1% on average), the frame is a near-duplicate: delete it. Otherwise keep it, and it becomes the new reference to compare the next frame against.
-4. **Sample the survivors down to the budget.** Only after duplicates are gone does the frame-budget cap apply — so the budget is spent on *distinct* frames, not diluted by repeats.
+Comparing against the last *kept* frame (not the previous one) catches slow fades that never trip a frame-to-frame threshold. The threshold is deliberately low and measures absolute brightness rather than structure, so a one-line code diff, a terminal scrolling a row, or two differently-colored flat slides all survive.
 
-Two design choices worth calling out:
-
-- **Compare against the last *kept* frame, not the immediately previous one.** A slow fade across ten frames never trips a frame-to-frame threshold (each step is tiny) but is obviously different end-to-end. Comparing against the last *kept* frame catches that gradual drift and still collapses a dead-static hold to a single frame.
-- **It's deliberately conservative, and it measures absolute brightness — not structure.** The threshold is low on purpose: a code diff with one changed line, a terminal scrolling a single row, or a slide that just gained a bullet all clear it and survive. Measuring absolute brightness (rather than a perceptual/structure hash) is what lets it tell two *flat* frames apart — a solid blue section slide and a solid green one differ in luma, so they're correctly kept, where a structure-only hash would see "no internal detail" in both and wrongly merge them.
-
-The result is reported, not silent: the **Frames** line shows e.g. `6 selected from 14 candidates (… 8 near-duplicates dropped …)` so you can always see what was collapsed. On a clip that holds a slide and then cuts to motion, that's the difference between paying for 14 frames and paying for 6 — with the transition and every distinct moment preserved. On footage that's genuinely always moving, nothing gets dropped and you pay exactly what you would have anyway.
+The **Frames** line reports what was collapsed, e.g. `6 selected from 14 candidates (… 8 near-duplicates dropped …)`. On always-moving footage nothing is dropped and you pay what you would have anyway.
 
 ## Detail modes — measured
 
-The `--detail` dial trades speed and token cost for visual fidelity. Numbers below are from a real run against a **49:08 (2948 s)** YouTube video (1280×720 source, English auto-captions, 1394 caption segments) — a long, mostly-static screen recording, which is the case that stresses the caps hardest. Frame-extraction times are measured against a pre-downloaded local copy so they reflect the *mode's* CPU cost, not network speed. The one-time video download for this clip was **~37 s** / 76 MB (shared by `efficient` / `balanced` / `token-burner`).
+The `--detail` dial trades speed and token cost for visual fidelity. Numbers below are from a real run against a **49:08** YouTube video (1280×720, English auto-captions) — a long, mostly-static screen recording, the case that stresses the caps hardest. Extraction times are local CPU against a pre-downloaded copy; the one-time download was **~37 s** / 76 MB, shared by the three frame modes.
 
 | Mode | Engine | Frames | Cap | Extraction time | Temporal coverage | Est. image tokens |
 |------|--------|--------|-----|-----------------|-------------------|-------------------|
-| `transcript` | none (captions) | 0 | — | **~4.5 s** (network-bound — one yt-dlp call, no video download) | full (text) | 0 (transcript ≈26.6k text tokens) |
+| `transcript` | none (captions) | 0 | — | **~4.5 s** (one yt-dlp call, no download) | full (text) | 0 (≈26.6k text tokens) |
 | `efficient` | keyframe (`-skip_frame nokey`) | 50 | 50 | **~0.5 s** | 0:00 → 49:04 (full) | **~9.8k** |
 | `balanced` | scene-change | 100 | 100 | **~20.9 s** | 0:00 → 48:38 (full) | **~19.7k** |
 | `token-burner` | scene-change | 116 | uncapped | **~21.0 s** | 0:00 → 48:38 (full) | **~22.8k** |
 
-Image-token estimate uses Anthropic's `(width × height) / 750` per image. At the default 512px width these 720p frames are 512×288, so **≈197 tokens/frame**; total image tokens ≈ `frames × 197`. Bumping `--resolution` to 1024 roughly **4×s** that. The transcript (~26.6k tokens here) is surfaced in *every* mode that has captions, so on the frame modes it adds to the image tokens above — on long videos the transcript, not the frames, is often the larger cost.
+- **Image tokens** use Anthropic's `(width × height) / 750` — at the default 512px width these 720p frames are 512×288, **≈197 tokens/frame**; `--resolution 1024` roughly 4×s that. The transcript is surfaced in every captioned mode and on long videos is often the larger cost.
+- **One sampling rule across frame modes.** Each detects all candidates across the full range, then even-samples (first + last always kept) down to its cap. The modes differ only in candidate *source* (keyframes vs. scene cuts) and cap, never in how coverage is spread — so the last frame always lands at the end, not partway through.
+- **`efficient` is the speed tier** (~0.5 s) — it only reconstructs keyframes, so it's ~40× faster than the scene modes, which decode every frame to find cuts. It can also return *more* frames than `balanced` on low-motion footage (keyframes outnumber scene cuts); "efficient" means fast extraction, not fewer frames.
+- **`token-burner` only diverges from `balanced` past the cap.** This clip had 116 cuts, so `balanced` sampled 100 and `token-burner` kept all 116. On high-motion video with hundreds of cuts, `token-burner` keeps everything (and trips the >250-frame token warning) while `balanced` thins to 100.
 
-**Note on the `transcript` time.** It looks slower than `efficient` only because the two numbers measure different things: `transcript`'s ~4.5 s is a network round-trip to the source (its *only* step — no video download, no ffmpeg), while the frame modes' times are local CPU with the shared ~37 s download billed separately. End-to-end from a cold URL, `transcript` is the **cheapest** mode by far; `efficient` from a cold URL would be ~37 s of download + 0.5 s of decode.
-
-What the numbers show:
-
-- **One consistent sampling rule across every frame mode.** All three detect *all* candidates across the full range, then even-sample (first + last always kept) down to the cap via a shared `_even_sample` helper — `transcript` excepted. Keyframes (`efficient`) and scene-cuts (`balanced`/`token-burner`) differ only in the candidate *source* and the cap, never in how coverage is spread.
-- **`efficient` is the speed tier** — ~0.5 s because it only reconstructs keyframes (P/B frames are skipped). For this clip it decoded **675 keyframes** and evenly sampled down to its 50-frame cap, spread across the whole 49 minutes.
-- **Caps are enforced and coverage spans the full clip.** `efficient` (675 → 50) and `balanced` (116 → 100) both sample first→last, so the last frame lands at 48:38–49:04, not partway through. Verified on the full video and on focused ranges (`--start`/`--end` of 30 s → 10 frames, 3 min → 37 frames). The even-sample step (`len(indices) == cap`) cannot return more than the cap. *(This addresses the "sometimes returns too many / drops the tail" concern: the `N selected from 675 candidates` line shows the pre-sample candidate count, not what gets surfaced — only the sampled frames are written and Read.)*
-- **`balanced` now full-decodes like `token-burner`** (~21 s vs `efficient`'s ~0.5 s). Detecting every scene cut requires decoding the whole video; the old `-frames:v` early-exit was ~3× faster but kept only the *first* 100 cuts and dropped the tail of long videos — so it was removed in favor of even coverage.
-- **`token-burner` only diverges from `balanced` past the cap.** This recording had **116** cuts over 49 min, so `balanced` sampled 100 of them and `token-burner` kept all 116 — both spanning the full video. On a high-motion video with hundreds of cuts, `token-burner` keeps everything (and the >250-frame token warning kicks in) while `balanced` thins to 100.
-- **`efficient` can return *more* frames than `balanced`** on low-motion footage (50 keyframes vs. few scene cuts) — the tiers differ by extraction *method* and cap, not by a guaranteed frame-count ordering. "Efficient" means near-instant extraction, not always fewer frames.
-
-Bottom line on timing: every mode finished its own work in **under 22 s** (plus the shared ~37 s download for the frame modes). `efficient` is ~40× faster than the scene modes here because the scene detector decodes every frame of the full 49 minutes, while `efficient` only reconstructs keyframes.
+End-to-end from a cold URL, `transcript` is the cheapest mode by far; the frame modes add the shared ~37 s download on top of the extraction times above.
 
 ## Install
 

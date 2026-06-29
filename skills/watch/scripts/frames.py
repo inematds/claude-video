@@ -28,6 +28,14 @@ SCENE_MIN_FRAMES = 8
 # (very short or oddly encoded), so the cheap tier falls back to uniform.
 KEYFRAME_MIN = 4
 MAX_READ_DIMENSION = 1998
+# Frame-delta dedup: downscale each frame to a DEDUP_THUMB x DEDUP_THUMB
+# grayscale thumbnail and treat two frames as near-identical when their mean
+# per-pixel difference (0-255) is at or below DEDUP_THRESHOLD. Conservative on
+# purpose: only collapses frames that are visually the same shot, so a code diff
+# / scrolling terminal / slide-gaining-a-bullet survives. Unlike a within-frame
+# perceptual hash, this distinguishes flat frames (solid slides, fades) by luma.
+DEDUP_THUMB = 16
+DEDUP_THRESHOLD = 2.0
 SHOWINFO_TS_RE = re.compile(r"pts_time:([0-9.]+)")
 
 
@@ -404,6 +412,101 @@ def _even_sample(candidates: list[dict], n: int) -> list[dict]:
     return selected
 
 
+def _frame_delta(a: bytes, b: bytes) -> float:
+    """Mean absolute per-pixel difference (0-255) between two grayscale
+    thumbnails. Mismatched lengths are treated as maximally different so a
+    decode hiccup never collapses distinct frames."""
+    if not a or len(a) != len(b):
+        return float("inf")
+    return sum(abs(x - y) for x, y in zip(a, b)) / len(a)
+
+
+def _thumb_frames(paths: list[Path]) -> list[bytes]:
+    """Decode every frame in ``paths`` to a small grayscale thumbnail via one
+    ffmpeg pass over the JPEG sequence.
+
+    ffmpeg does the pixel decode (keeps us pure-stdlib); we slice the raw
+    grayscale stream into one ``DEDUP_THUMB``-square thumbnail per frame.
+    Fail-open: any ffmpeg error, an unrecognized name, or a byte-count mismatch
+    returns ``[]`` so the caller skips dedup rather than breaking extraction.
+    """
+    if not paths:
+        return []
+    paths = [Path(p) for p in paths]
+    m = re.match(r"(.*?)(\d+)(\.[A-Za-z0-9]+)$", paths[0].name)
+    if m is None:
+        return []
+    prefix, digits, ext = m.group(1), m.group(2), m.group(3)
+    pattern = str(paths[0].parent / f"{prefix}%0{len(digits)}d{ext}")
+
+    cmd = [
+        "ffmpeg",
+        "-hide_banner",
+        "-loglevel", "error",
+        "-start_number", str(int(digits)),
+        "-i", pattern,
+        "-vf", f"scale={DEDUP_THUMB}:{DEDUP_THUMB},format=gray",
+        "-f", "rawvideo",
+        "-",
+    ]
+    result = subprocess.run(cmd, capture_output=True)
+    if result.returncode != 0:
+        return []
+
+    chunk = DEDUP_THUMB * DEDUP_THUMB
+    data = result.stdout
+    if len(data) != chunk * len(paths):
+        return []
+    return [data[i * chunk:(i + 1) * chunk] for i in range(len(paths))]
+
+
+def dedupe_perceptual(
+    candidates: list[dict], threshold: float = DEDUP_THRESHOLD
+) -> tuple[list[dict], int]:
+    """Drop near-identical frames from a chronological candidate list.
+
+    Thumbnails the extracted JPEGs and greedily removes frames whose mean
+    per-pixel difference from the last kept one is within ``threshold``. Returns
+    ``(survivors, dropped_count)``; a no-op (unchanged list) when thumbnails are
+    unavailable or there are fewer than two candidates.
+    """
+    if len(candidates) <= 1:
+        return candidates, 0
+    thumbs = _thumb_frames([Path(c["path"]) for c in candidates])
+    return _dedupe_by_deltas(candidates, thumbs, threshold)
+
+
+def _dedupe_by_deltas(
+    candidates: list[dict], thumbs: list[bytes], threshold: float = DEDUP_THRESHOLD
+) -> tuple[list[dict], int]:
+    """Greedily drop frames within ``threshold`` mean per-pixel difference of the
+    last *kept* frame. Deletes dropped JPEGs and reindexes survivors 0..n-1 (same
+    cleanup contract as :func:`_even_sample`). Fail-open: if ``thumbs`` does not
+    line up 1:1 with ``candidates``, return them unchanged.
+    """
+    if len(thumbs) != len(candidates) or len(candidates) <= 1:
+        return candidates, 0
+
+    kept = [candidates[0]]
+    last = thumbs[0]
+    dropped: list[dict] = []
+    for cand, thumb in zip(candidates[1:], thumbs[1:]):
+        if _frame_delta(thumb, last) <= threshold:
+            dropped.append(cand)
+        else:
+            kept.append(cand)
+            last = thumb
+
+    for cand in dropped:
+        try:
+            Path(cand["path"]).unlink()
+        except OSError:
+            pass
+    for i, frame in enumerate(kept):
+        frame["index"] = i
+    return kept, len(dropped)
+
+
 def extract_scene_or_uniform(
     video_path: str,
     out_dir: Path,
@@ -413,17 +516,19 @@ def extract_scene_or_uniform(
     max_frames: int | None = 100,
     start_seconds: float | None = None,
     end_seconds: float | None = None,
+    dedup: bool = True,
 ) -> tuple[list[dict], dict]:
     """Prefer scene selection, falling back to uniform only when the video is
     effectively static (fewer than ``SCENE_MIN_FRAMES`` detected shots).
 
-    Scene cuts are detected across the *whole* range (uncapped) and then
-    even-sampled down to ``max_frames`` via :func:`_even_sample`, exactly like
-    the keyframe engine. This costs a full decode, but it guarantees coverage
-    spans the entire clip — capping detection with ``-frames:v`` instead would
-    keep only the first ``max_frames`` cuts and drop the tail of long videos
-    (and could even fall below ``SCENE_MIN_FRAMES`` and misfire the uniform
-    fallback on a cut-heavy clip).
+    Scene cuts are detected across the *whole* range (uncapped), near-identical
+    frames are dropped (:func:`dedupe_perceptual`, unless ``dedup`` is False),
+    and the survivors are even-sampled down to ``max_frames`` via
+    :func:`_even_sample`, exactly like the keyframe engine. This costs a full
+    decode, but it guarantees coverage spans the entire clip — capping detection
+    with ``-frames:v`` instead would keep only the first ``max_frames`` cuts and
+    drop the tail of long videos (and could even fall below ``SCENE_MIN_FRAMES``
+    and misfire the uniform fallback on a cut-heavy clip).
     """
     scene_frames = extract_scene_candidates(
         video_path,
@@ -435,11 +540,13 @@ def extract_scene_or_uniform(
     )
     scene_count = len(scene_frames)
     if scene_count >= SCENE_MIN_FRAMES:
-        cap = scene_count if max_frames is None else max_frames
-        selected = _even_sample(scene_frames, cap)
+        deduped, n_dropped = dedupe_perceptual(scene_frames) if dedup else (scene_frames, 0)
+        cap = len(deduped) if max_frames is None else max_frames
+        selected = _even_sample(deduped, cap)
         return selected, {
             "engine": "scene",
             "candidate_count": scene_count,
+            "deduped_count": n_dropped,
             "selected_count": len(selected),
             "fallback": False,
         }
@@ -454,9 +561,13 @@ def extract_scene_or_uniform(
         start_seconds=start_seconds,
         end_seconds=end_seconds,
     )
+    n_dropped = 0
+    if dedup:
+        frames, n_dropped = dedupe_perceptual(frames)
     return frames, {
         "engine": "uniform",
         "candidate_count": scene_count,
+        "deduped_count": n_dropped,
         "selected_count": len(frames),
         "fallback": True,
     }
@@ -469,13 +580,15 @@ def extract_keyframes(
     max_frames: int | None = 50,
     start_seconds: float | None = None,
     end_seconds: float | None = None,
+    dedup: bool = True,
 ) -> tuple[list[dict], dict]:
     """Decode only keyframes (I-frames) — the cheap, near-instant tier.
 
     ``-skip_frame nokey`` makes ffmpeg reconstruct only keyframes, skipping all
     P/B frames. Encoders emit keyframes at scene cuts, so these already
-    approximate "distinct moments". Over-cap → even-sample first→last; too few
-    keyframes → uniform fallback.
+    approximate "distinct moments". Near-identical frames are dropped
+    (:func:`dedupe_perceptual`, unless ``dedup`` is False); over-cap →
+    even-sample first→last; too few keyframes → uniform fallback.
     """
     if shutil.which("ffmpeg") is None:
         raise SystemExit("ffmpeg is not installed. Install with: brew install ffmpeg")
@@ -543,21 +656,27 @@ def extract_keyframes(
             start_seconds=start_seconds,
             end_seconds=end_seconds,
         )
+        n_dropped = 0
+        if dedup:
+            frames_out, n_dropped = dedupe_perceptual(frames_out)
         return frames_out, {
             "engine": "uniform",
             "candidate_count": len(candidates),
+            "deduped_count": n_dropped,
             "selected_count": len(frames_out),
             "fallback": True,
         }
 
-    # Detect-all then even-sample down to the cap (first + last always kept).
-    # ``max_frames is None`` (uncapped) keeps every keyframe.
+    # Detect-all, drop near-duplicates, then even-sample down to the cap (first +
+    # last always kept). ``max_frames is None`` (uncapped) keeps every keyframe.
     candidate_count = len(candidates)
-    cap = candidate_count if max_frames is None else max_frames
-    selected = _even_sample(candidates, cap)
+    deduped, n_dropped = dedupe_perceptual(candidates) if dedup else (candidates, 0)
+    cap = len(deduped) if max_frames is None else max_frames
+    selected = _even_sample(deduped, cap)
     return selected, {
         "engine": "keyframe",
         "candidate_count": candidate_count,
+        "deduped_count": n_dropped,
         "selected_count": len(selected),
         "fallback": False,
     }
@@ -567,7 +686,7 @@ if __name__ == "__main__":
     if len(sys.argv) < 3:
         print(
             "usage: frames.py <video-path> <out-dir> [--fps F] [--resolution W] "
-            "[--max-frames N] [--start T] [--end T]",
+            "[--max-frames N] [--start T] [--end T] [--no-dedup]",
             file=sys.stderr,
         )
         raise SystemExit(2)
@@ -581,6 +700,7 @@ if __name__ == "__main__":
     max_frames = 100
     start_arg = None
     end_arg = None
+    dedup = True
     i = 0
     while i < len(args):
         if args[i] == "--fps":
@@ -593,6 +713,8 @@ if __name__ == "__main__":
             start_arg = args[i + 1]; i += 2
         elif args[i] == "--end":
             end_arg = args[i + 1]; i += 2
+        elif args[i] == "--no-dedup":
+            dedup = False; i += 1
         else:
             i += 1
 
@@ -622,7 +744,13 @@ if __name__ == "__main__":
         start_seconds=start_sec,
         end_seconds=end_sec,
     )
+    deduped_count = 0
+    if dedup:
+        frames, deduped_count = dedupe_perceptual(frames)
     print(json.dumps(
-        {"meta": meta, "fps": fps, "target": target, "focused": focused, "frames": frames},
+        {
+            "meta": meta, "fps": fps, "target": target, "focused": focused,
+            "deduped_count": deduped_count, "frames": frames,
+        },
         indent=2,
     ))

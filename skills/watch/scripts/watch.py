@@ -60,6 +60,12 @@ def main() -> int:
         default=None,
         help="Force a specific Whisper backend. Default: prefer Groq, fall back to OpenAI.",
     )
+    ap.add_argument(
+        "--no-dedup",
+        action="store_true",
+        help="Disable near-duplicate frame removal. Keeps visually identical "
+             "frames (static screen recordings, held slides) instead of collapsing them.",
+    )
     args = ap.parse_args()
 
     config = get_config()
@@ -203,6 +209,7 @@ def main() -> int:
                 max_frames=detail_budget,
                 start_seconds=start_sec,
                 end_seconds=end_sec,
+                dedup=not args.no_dedup,
             )
         else:  # balanced, token-burner
             frames, frame_meta = extract_scene_or_uniform(
@@ -214,6 +221,7 @@ def main() -> int:
                 max_frames=detail_budget,
                 start_seconds=start_sec,
                 end_seconds=end_sec,
+                dedup=not args.no_dedup,
             )
 
     if cue_frames:
@@ -282,9 +290,11 @@ def main() -> int:
         cap_label = "unlimited" if detail_budget is None else str(detail_budget)
         engine = frame_meta.get("engine", "scene")
         fallback = " with uniform fallback" if frame_meta.get("fallback") else ""
+        deduped = frame_meta.get("deduped_count", 0)
+        dedup_note = f", {deduped} near-duplicate{'s' if deduped != 1 else ''} dropped" if deduped else ""
         print(
             f"- **Frames:** {detail_count} selected from {frame_meta.get('candidate_count', detail_count)} "
-            f"candidates ({engine}{fallback}, {range_mode} range, budget {target}, cap {cap_label})"
+            f"candidates ({engine}{fallback}{dedup_note}, {range_mode} range, budget {target}, cap {cap_label})"
         )
     elif not cue_frames:
         print("- **Frames:** skipped (transcript detail)")
@@ -313,13 +323,14 @@ def main() -> int:
             "This may use a large number of image tokens."
         )
 
-    if not focused and full_duration > 600 and detail != "transcript":
+    if not focused and full_duration > 600 and detail not in ("transcript", "token-burner"):
         mins = int(full_duration // 60)
         print()
         print(
-            f"> **Warning:** This is a {mins}-minute video. Frame coverage is sparse at this length — "
-            "accuracy degrades noticeably on anything over 10 minutes. For better results, "
-            "re-run with `--start HH:MM:SS --end HH:MM:SS` to zoom into a specific section."
+            f"> **Warning:** This is a {mins}-minute video. Frame coverage is sparse at this length "
+            f"under `{detail}` detail — its cap spreads thin across the full clip. For better results, "
+            "re-run with `--start HH:MM:SS --end HH:MM:SS` to zoom into a section, or use "
+            "`--detail token-burner` to keep every scene-change frame across the whole video."
         )
 
     print()

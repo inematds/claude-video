@@ -30,7 +30,7 @@ With Claude Video `/watch` you can paste a URL or a local path, ask a question, 
 
 ## Why this exists
 
-I built this because I'm constantly using video to keep up with content. If I see a YouTube video that's blowing up, I want to know how the creator structured the hook — what's on screen in the first 3 seconds, what they said, why it worked. That used to mean watching it myself with a notepad. Now I just paste the URL and ask.
+I run a [YouTube channel](https://www.youtube.com/@bradbonanno) and a business, [Solaris Automation](https://www.solarisautomation.io/), so I'm constantly using video to keep up with content. If I see a YouTube video that's blowing up, I want to know how the creator structured the hook — what's on screen in the first 3 seconds, what they said, why it worked. That used to mean watching it myself with a notepad. Now I just paste the URL and ask.
 
 The other half is summarization. Most YouTube videos don't deserve 20 minutes of my attention. I hand the URL to Claude, it pulls the transcript, and tells me what actually happened. If the visual matters, frames come along too. If it's a podcast or a talking head, transcript is enough.
 
@@ -44,12 +44,20 @@ Claude is great at reading and synthesizing — but until now, video was the one
 
 **Summarize a video.** `/watch https://youtu.be/<long-thing> summarize this` does the obvious thing — pulls the structure, the key moments, what was actually said and shown. Faster than watching at 2x.
 
+**Cut the hype out of an update video.** `/watch https://youtu.be/<launch-video> what's actually new — skip the hype` Strip a "game-changer" feature drop down to the few things that matter, so you get the substance without ten minutes of intro and overselling.
+
+**Jump to the one answer in a long tutorial.** `/watch https://youtu.be/<2hr-tutorial> how do they set up the webhook?` Instead of scrubbing an hour of video for a 30-second answer — or matching a vague transcript and watching anyway — Claude finds the moment and tells you what's on screen there.
+
+**Read a screen-share recording the transcript can't.** `/watch standup.mp4 what was on the shared screen when they decided?` When a meeting transcript collapses into "if you look here" and "make it look like this," the words stop carrying the meaning — the frames recover what was actually being shown.
+
+**Turn a playlist into notes.** `/watch https://youtu.be/<video> summarize this to a note` Run it across a series and file a per-video summary, so a channel or course becomes a searchable set of notes instead of hours you have to sit through.
+
 ## How it works
 
 1. **You paste a video and a question.** URL (anything yt-dlp supports — YouTube, Loom, TikTok, X, Instagram, plus a few hundred more) or a local path (`.mp4`, `.mov`, `.mkv`, `.webm`).
 2. **`yt-dlp` checks captions first.** At `transcript` detail, captioned URLs return without downloading video. Otherwise, or when Whisper needs audio, it downloads only what the run needs.
 3. **`ffmpeg` extracts frames at the chosen detail.** `efficient` decodes keyframes only (near-instant); `balanced`/`token-burner` prefer scene-change frames and fall back to the duration-aware uniform sampler when they under-produce. JPEGs are 512px wide by default and clamped to 1998px tall for Claude Read compatibility.
-4. **The transcript comes from one of two places.** First try: `yt-dlp` pulls native captions (manual or auto-generated) from the source. Free, instant, accurate-ish. Fallback: extract a mono 16 kHz audio clip and ship it to Whisper — Groq's `whisper-large-v3` (preferred — cheaper and faster) or OpenAI's `whisper-1`.
+4. **The transcript comes from one of two places.** First try: `yt-dlp` pulls native captions (manual or auto-generated) from the source. Free, instant, accurate-ish. Fallback: extract a mono 16 kHz 64 kbps mp3 audio clip (~480 kB/min) and ship it to Whisper — Groq's `whisper-large-v3` (preferred — cheaper and faster) or OpenAI's `whisper-1`.
 5. **Frames + transcript are handed to Claude.** The script prints frame paths with `t=MM:SS` markers and the transcript with timestamps. Claude `Read`s each frame in parallel — JPEGs render directly as images in its context.
 6. **Claude answers grounded in what's actually on screen and in the audio.** Not "based on the description" or "according to the title." It saw the frames. It heard the transcript. It answers the way someone who watched the video would.
 7. **Cleanup.** The script prints a working directory at the end. If you're not asking follow-ups, Claude removes it.
@@ -64,9 +72,27 @@ Token cost is dominated by frames. Every frame is an image; image tokens add up 
 | 30 s - 1 min | ~40 frames | Still dense |
 | 1 - 3 min | ~60 frames | Comfortable |
 | 3 - 10 min | ~80 frames | Sparse but workable |
-| > 10 min | 100 frames | "Sparse scan" warning — re-run focused |
+| > 10 min | 100 frames (capped modes) | "Sparse scan" warning — re-run focused, or `--detail token-burner` for full uncapped coverage |
 
 When the user names a moment ("around 2:30", "the last 30 seconds", "from 0:45 to 1:00"), pass `--start` / `--end`. Focused mode gets denser per-second budgets, capped at 2 fps. Far more useful than a sparse pass over the whole thing.
+
+## Frame deduplication — why you don't pay for held slides
+
+Sampling spreads frames evenly across time, but time isn't where the information is. A 10-minute screen recording that sits on one slide for 90 seconds gives you a dozen *pixel-for-pixel identical* frames of that slide — each one a separate image, each one billed in tokens. Even-sampling doesn't know they're the same; it just hands them all over.
+
+So before the frames are handed to Claude, a dedup pass drops the ones that didn't change. It runs by default on every frame mode (`--no-dedup` turns it off). Here's the logic, end to end:
+
+1. **Decode each frame to a tiny fingerprint.** One `ffmpeg` call scales every extracted JPEG down to a 16×16 grayscale thumbnail — 256 brightness values per frame. ffmpeg does the pixel decoding; everything after is pure-stdlib Python, no image libraries.
+2. **Measure how much changed.** For each frame, compute the **mean absolute difference** against the *last frame that was kept* — the average per-pixel brightness change on a 0–255 scale. This is a literal "how different are these two frames" number, not a heuristic.
+3. **Drop it if nothing meaningfully changed.** If that difference is at or below the threshold (`2.0` — i.e. the picture moved less than ~1% on average), the frame is a near-duplicate: delete it. Otherwise keep it, and it becomes the new reference to compare the next frame against.
+4. **Sample the survivors down to the budget.** Only after duplicates are gone does the frame-budget cap apply — so the budget is spent on *distinct* frames, not diluted by repeats.
+
+Two design choices worth calling out:
+
+- **Compare against the last *kept* frame, not the immediately previous one.** A slow fade across ten frames never trips a frame-to-frame threshold (each step is tiny) but is obviously different end-to-end. Comparing against the last *kept* frame catches that gradual drift and still collapses a dead-static hold to a single frame.
+- **It's deliberately conservative, and it measures absolute brightness — not structure.** The threshold is low on purpose: a code diff with one changed line, a terminal scrolling a single row, or a slide that just gained a bullet all clear it and survive. Measuring absolute brightness (rather than a perceptual/structure hash) is what lets it tell two *flat* frames apart — a solid blue section slide and a solid green one differ in luma, so they're correctly kept, where a structure-only hash would see "no internal detail" in both and wrongly merge them.
+
+The result is reported, not silent: the **Frames** line shows e.g. `6 selected from 14 candidates (… 8 near-duplicates dropped …)` so you can always see what was collapsed. On a clip that holds a slide and then cuts to motion, that's the difference between paying for 14 frames and paying for 6 — with the transition and every distinct moment preserved. On footage that's genuinely always moving, nothing gets dropped and you pay exactly what you would have anyway.
 
 ## Detail modes — measured
 
@@ -196,13 +222,13 @@ Other knobs (passed to `scripts/watch.py`):
 - `--fps F` — override the auto-fps calculation (still capped at 2 fps).
 - `--whisper groq|openai` — force a specific Whisper backend.
 - `--no-whisper` — disable transcription entirely; frames only.
+- `--no-dedup` — keep near-duplicate frames. By default a frame-delta pass drops frames that are visually near-identical to the one before them (held slides, static screen recordings, paused video), so the frame budget is spent on distinct content; this flag turns that off.
 - `--out-dir DIR` — keep working files somewhere specific (default: auto-generated tmp dir).
 
 ## Limits
 
-- **Best accuracy: under 10 minutes.** Past that the script prints a "sparse scan" warning — re-run focused on the part you actually care about with `--start`/`--end`.
+- **Long-video accuracy depends on the detail mode.** On the capped modes (`efficient`, default `balanced`) coverage thins out past ~10 minutes — the frame cap spreads across the whole clip, so the script prints a "sparse scan" warning and you're better off re-running focused with `--start`/`--end`. `token-burner` lifts the cap and keeps *every* scene-change frame across the full video, so it stays complete on longer clips at the cost of more image tokens. The 10-minute mark is guidance for the capped modes, not a hard ceiling.
 - **Detail is one dial.** Defaults are balanced: scene-aware frames, 2 fps max, 100-frame cap. Use `--detail efficient` for a fast 50-frame keyframe pass, or `--detail token-burner` for uncapped scene candidates. Set `WATCH_DETAIL` in `~/.config/watch/.env` to change the default.
-- **Whisper upload limit: 25 MB.** At mono 16 kHz that's about 50 minutes of audio. Longer videos need either captions or `--start`/`--end` to a smaller window.
 
 ## Structure
 
@@ -248,16 +274,18 @@ MIT license.
 
 Built on `yt-dlp`, `ffmpeg`, and Claude's multimodal `Read` tool. Whisper transcription via [Groq](https://groq.com) or [OpenAI](https://openai.com).
 
+Built by Brad Bonanno — I make content about building with AI on [YouTube (@bradbonanno)](https://www.youtube.com/@bradbonanno), and build AI operating systems for businesses at [Solaris Automation](https://www.solarisautomation.io/). If `/watch` saves you from scrubbing through a video, come say hi on the channel.
+
 ## Star History
 
-<a href="https://star-history.com/#bradautomates/claude-video&Date">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=bradautomates/claude-video&type=Date&theme=dark" />
-    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=bradautomates/claude-video&type=Date" />
-    <img alt="Star History Chart" src="https://api.star-history.com/svg?repos=bradautomates/claude-video&type=Date" />
-  </picture>
+<a href="https://www.star-history.com/?repos=bradautomates%2Fclaude-video&type=date&legend=top-left">
+ <picture>
+   <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/chart?repos=bradautomates/claude-video&type=date&theme=dark&legend=top-left" />
+   <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/chart?repos=bradautomates/claude-video&type=date&legend=top-left" />
+   <img alt="Star History Chart" src="https://api.star-history.com/chart?repos=bradautomates/claude-video&type=date&legend=top-left" />
+ </picture>
 </a>
 
 ---
 
-[github.com/bradautomates/claude-video](https://github.com/bradautomates/claude-video) · [LICENSE](LICENSE)
+[github.com/bradautomates/claude-video](https://github.com/bradautomates/claude-video) · [@bradbonanno](https://www.youtube.com/@bradbonanno) · [Solaris Automation](https://www.solarisautomation.io/) · [LICENSE](LICENSE)

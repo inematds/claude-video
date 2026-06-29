@@ -67,3 +67,19 @@ def test_timestamps_with_transcript_detail_is_cue_only(cut_clip: Path):
     assert "reason=transcript-cue" in out
     assert "reason=scene-change" not in out
     assert "reason=keyframe" not in out
+
+
+def _frame_lines(out: str) -> int:
+    return sum(1 for line in out.splitlines() if "/frames/frame_" in line and "(t=" in line)
+
+
+def test_dedup_collapses_static_by_default(static_clip: Path):
+    out = _run(static_clip)  # solid blue → identical frames collapse to one
+    assert "near-duplicate" in out
+    assert _frame_lines(out) == 1
+
+
+def test_no_dedup_preserves_static_frames(static_clip: Path):
+    out = _run(static_clip, "--no-dedup")
+    assert "near-duplicate" not in out
+    assert _frame_lines(out) > 1

@@ -1,5 +1,6 @@
 # Exclude non-runtime files from `git archive` output.
-# Used by scripts/build-skill.sh to produce a claude.ai-upload-ready .skill file.
+# Used by skills/watch/scripts/build-skill.sh to produce the claude.ai .skill file
+# and by Claude Code's /plugin install (full-repo archive).
 
 # Anthropic canonical skill-packaging excludes
 # (mirrors anthropics/skills/skills/skill-creator/scripts/package_skill.py)
@@ -15,10 +16,21 @@ fixtures/      export-ignore
 assets/        export-ignore
 examples/      export-ignore
 
-# NOTE: commands/, hooks/, and .claude-plugin/ are NOT export-ignored because
-# Claude Code's /plugin install fetches this same git archive tarball — they
-# must be in the archive for the plugin to install correctly. The claude.ai
-# .skill bundle strips them afterward via `zip -d` in scripts/build-skill.sh.
+# Dev tooling and planning notes — repo-only, not shipped to any install surface
+dev-sync.sh      export-ignore
+V2_PLAN.md       export-ignore
+V2_CONCERNS.md   export-ignore
+.agents/         export-ignore
+
+# Dev-only build script + scanner config inside the skill tree: keep them out of
+# the claude.ai .skill bundle (built via `git archive HEAD:skills/watch`).
+skills/watch/scripts/build-skill.sh export-ignore
+skills/watch/.skillignore           export-ignore
+
+# NOTE: hooks/ and .claude-plugin/ are NOT export-ignored because Claude Code's
+# /plugin install fetches the full-repo git archive — they must be present for
+# the plugin to install correctly. The claude.ai .skill bundle is built from the
+# skills/watch/ subtree only, so it never sees them in the first place.
 
 # CI workflows — repo-only, not needed at skill runtime
 .github/         export-ignore

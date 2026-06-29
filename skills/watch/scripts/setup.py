@@ -26,6 +26,11 @@ import subprocess
 import sys
 from pathlib import Path
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+if str(SCRIPT_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPT_DIR))
+from config import get_config  # noqa: E402
+
 
 REQUIRED_BINARIES = ["ffmpeg", "ffprobe", "yt-dlp"]
 CONFIG_DIR = Path.home() / ".config" / "watch"
@@ -46,6 +51,9 @@ ENV_TEMPLATE = """# /watch API configuration
 
 GROQ_API_KEY=
 OPENAI_API_KEY=
+
+# Default watch behavior (the /watch first-run wizard sets this for you):
+# WATCH_DETAIL=balanced            # transcript | efficient | balanced | token-burner
 """
 
 
@@ -57,11 +65,19 @@ def _check_binaries() -> list[str]:
     return [b for b in REQUIRED_BINARIES if not _which(b)]
 
 
+_PERM_WARNED: set[str] = set()
+
+
 def _check_file_permissions(path: Path) -> None:
-    """Warn to stderr if a secrets file is world/group readable."""
+    """Warn to stderr (once per path per process) if a secrets file is
+    world/group readable."""
+    key = str(path)
+    if key in _PERM_WARNED:
+        return
     try:
         mode = path.stat().st_mode
         if mode & 0o044:
+            _PERM_WARNED.add(key)
             sys.stderr.write(
                 f"[watch] WARNING: {path} is readable by other users. "
                 f"Run: chmod 600 {path}\n"
@@ -197,9 +213,20 @@ def _install_hint_windows(missing: list[str]) -> str:
 
 
 def _status() -> dict:
-    """Structured preflight snapshot."""
+    """Structured preflight snapshot.
+
+    `status` describes the *ideal* state (a Whisper key is encouraged), so a
+    keyless install still reports `needs_key` on the very first run — that's
+    the agent's cue to encourage adding one.
+
+    `can_proceed` is the operational gate: /watch can run as long as the
+    binaries are present AND the user has either set a key or already finished
+    setup (consciously opting out of Whisper). A keyless user who completed
+    setup is NOT nagged on every call.
+    """
     missing = _check_binaries()
     has_key, backend = _have_api_key()
+    setup_complete = not is_first_run()
 
     if not missing and has_key:
         status = "ready"
@@ -210,13 +237,19 @@ def _status() -> dict:
     else:
         status = "needs_key"
 
+    can_proceed = (not missing) and (has_key or setup_complete)
+
+    cfg = get_config()
     return {
         "status": status,
-        "first_run": is_first_run(),
+        "can_proceed": can_proceed,
+        "first_run": not setup_complete,
+        "setup_complete": setup_complete,
         "missing_binaries": missing,
         "whisper_backend": backend,
         "has_api_key": has_key,
         "config_file": str(CONFIG_FILE),
+        "watch_detail": cfg["detail"],
         "platform": platform.system(),
     }
 
@@ -224,20 +257,23 @@ def _status() -> dict:
 def cmd_check() -> int:
     """Silent-on-success preflight.
 
-    Exit 0 with no output when ready. On failure, print one actionable line
-    to stderr and return:
+    Exit 0 with no output when /watch can run. A keyless user who already
+    finished setup (SETUP_COMPLETE=true) counts as ready — Whisper is
+    encouraged, not required — so they are never nagged on follow-up calls.
+
+    On a state that blocks /watch, print one actionable line to stderr:
       2 → binaries missing
-      3 → API key missing
+      3 → genuine first run with no API key (encourage one)
       4 → both missing
     """
     s = _status()
-    if s["status"] == "ready":
+    if s["can_proceed"]:
         return 0
 
     parts = []
     if s["missing_binaries"]:
         parts.append(f"missing binaries: {', '.join(s['missing_binaries'])}")
-    if not s["has_api_key"]:
+    if not s["has_api_key"] and not s["setup_complete"]:
         parts.append("no Whisper API key (GROQ_API_KEY or OPENAI_API_KEY)")
     installer = Path(__file__).resolve()
     sys.stderr.write(

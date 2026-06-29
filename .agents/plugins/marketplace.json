@@ -1,0 +1,20 @@
+{
+  "name": "claude-video",
+  "interface": {
+    "displayName": "watch"
+  },
+  "plugins": [
+    {
+      "name": "watch",
+      "source": {
+        "source": "url",
+        "url": "https://github.com/bradautomates/claude-video.git"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

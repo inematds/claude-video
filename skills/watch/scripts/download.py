@@ -45,12 +45,15 @@ def _pick_subtitle(out_dir: Path) -> Path | None:
     candidates = sorted(out_dir.glob("video*.vtt"))
     if not candidates:
         return None
-    preferred = [c for c in candidates if ".en" in c.name]
+    preferred = [
+        c for c in candidates
+        if any(marker in c.name for marker in (".en.", ".en-US.", ".en-GB.", ".en-orig."))
+    ]
     return preferred[0] if preferred else candidates[0]
 
 
 def _pick_video(out_dir: Path) -> Path | None:
-    for ext in (".mp4", ".mkv", ".webm", ".mov"):
+    for ext in (".mp4", ".mkv", ".webm", ".mov", ".m4a", ".mp3", ".opus"):
         for candidate in out_dir.glob(f"video*{ext}"):
             return candidate
     for candidate in out_dir.glob("video.*"):
@@ -59,22 +62,77 @@ def _pick_video(out_dir: Path) -> Path | None:
     return None
 
 
-def download_url(url: str, out_dir: Path) -> dict:
+def fetch_captions(url: str, out_dir: Path) -> dict:
+    """Fetch metadata and best available VTT captions without downloading video."""
+    if shutil.which("yt-dlp") is None:
+        raise SystemExit("yt-dlp is not installed. Install with: brew install yt-dlp")
+
+    out_dir.mkdir(parents=True, exist_ok=True)
+    output_template = str(out_dir / "video.%(ext)s")
+    cmd = [
+        "yt-dlp",
+        "--skip-download",
+        "--write-info-json",
+        "--write-subs",
+        "--write-auto-subs",
+        "--sub-langs", "en.*",
+        "--sub-format", "vtt",
+        "--convert-subs", "vtt",
+        "--no-playlist",
+        "--ignore-errors",
+        "-o", output_template,
+        "--",
+        url,
+    ]
+    subprocess.run(cmd, stdout=sys.stderr, stderr=sys.stderr)
+    subtitle = _pick_subtitle(out_dir)
+    info = _read_info(out_dir / "video.info.json", url)
+    return {
+        "video_path": None,
+        "subtitle_path": str(subtitle) if subtitle else None,
+        "info": info or {"url": url},
+        "downloaded": False,
+    }
+
+
+def _read_info(info_path: Path, url: str) -> dict:
+    info: dict = {}
+    if info_path.exists():
+        try:
+            raw = json.loads(info_path.read_text(encoding="utf-8"))
+            info = {
+                "title": raw.get("title"),
+                "uploader": raw.get("uploader") or raw.get("channel"),
+                "duration": raw.get("duration"),
+                "url": raw.get("webpage_url") or url,
+            }
+        except Exception as exc:
+            print(f"[watch] info.json parse failed: {exc}", file=sys.stderr)
+            info = {"url": url}
+    return info
+
+
+def download_url(
+    url: str,
+    out_dir: Path,
+    audio_only: bool = False,
+) -> dict:
     if shutil.which("yt-dlp") is None:
         raise SystemExit("yt-dlp is not installed. Install with: brew install yt-dlp")
 
     out_dir.mkdir(parents=True, exist_ok=True)
     output_template = str(out_dir / "video.%(ext)s")
 
+    fmt = "ba/bestaudio" if audio_only else "bv*[height<=720]+ba/b[height<=720]/bv+ba/b"
     cmd = [
         "yt-dlp",
         "-N", "8",
-        "-f", "bv*[height<=720]+ba/b[height<=720]/bv+ba/b",
+        "-f", fmt,
         "--merge-output-format", "mp4",
         "--write-info-json",
         "--write-subs",
         "--write-auto-subs",
-        "--sub-langs", "en,en-US,en-GB,en-orig",
+        "--sub-langs", "en.*",
         "--sub-format", "vtt",
         "--convert-subs", "vtt",
         "--no-playlist",
@@ -94,20 +152,7 @@ def download_url(url: str, out_dir: Path) -> dict:
         )
 
     subtitle = _pick_subtitle(out_dir)
-    info_path = out_dir / "video.info.json"
-    info: dict = {}
-    if info_path.exists():
-        try:
-            raw = json.loads(info_path.read_text(encoding="utf-8"))
-            info = {
-                "title": raw.get("title"),
-                "uploader": raw.get("uploader") or raw.get("channel"),
-                "duration": raw.get("duration"),
-                "url": raw.get("webpage_url") or url,
-            }
-        except Exception as exc:
-            print(f"[watch] info.json parse failed: {exc}", file=sys.stderr)
-            info = {"url": url}
+    info = _read_info(out_dir / "video.info.json", url)
 
     return {
         "video_path": str(video),
@@ -117,9 +162,13 @@ def download_url(url: str, out_dir: Path) -> dict:
     }
 
 
-def download(source: str, out_dir: Path) -> dict:
+def download(
+    source: str,
+    out_dir: Path,
+    audio_only: bool = False,
+) -> dict:
     if is_url(source):
-        return download_url(source, out_dir)
+        return download_url(source, out_dir, audio_only=audio_only)
     return resolve_local(source)
 
 

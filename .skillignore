@@ -1,0 +1,33 @@
+# Agent Skills install-time scanner exclusions for repository-root scans.
+# Keep the public bundle focused on the runtime skill under skills/watch/.
+
+# VCS, local envs, caches, and generated outputs
+.git/
+.venv/
+__pycache__/
+*.pyc
+*.log
+.DS_Store
+.pytest_cache/
+.coverage
+htmlcov/
+dist/
+
+# Repo/dev automation and host-specific package metadata
+.github/
+.agents/
+.claude-plugin/
+hooks/
+dev-sync.sh
+
+# Non-runtime docs, plans, and tests
+tests/
+README.md
+CHANGELOG.md
+AGENTS.md
+CLAUDE.md
+V2_PLAN.md
+V2_CONCERNS.md
+
+# Dev-only script shipped inside the skill tree but not needed at runtime
+skills/watch/scripts/build-skill.sh

@@ -52,8 +52,10 @@ ENV_TEMPLATE = """# /watch API configuration
 GROQ_API_KEY=
 OPENAI_API_KEY=
 
-# Default watch behavior (the /watch first-run wizard sets this for you):
-# WATCH_DETAIL=balanced            # transcript | efficient | balanced | token-burner
+# Default watch behavior (the /watch first-run wizard sets this for you).
+# Allowed values: transcript | efficient | balanced | token-burner
+# Keep the value on its own line with no trailing comment.
+# WATCH_DETAIL=balanced
 """
 
 

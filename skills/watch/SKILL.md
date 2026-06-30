@@ -93,7 +93,7 @@ On macOS with Homebrew, it auto-installs `ffmpeg` and `yt-dlp`. On Linux/Windows
   - `balanced` (recommended) — scene-aware frames (cap 100, default).
   - `token-burner` — scene-aware, uncapped (maximum fidelity; high token cost).
 
-Write the answer directly into `~/.config/watch/.env` by setting:
+Write the answer directly into `~/.config/watch/.env` by setting the bare key on its own line — **no trailing inline comment** (a `# note` after the value can break parsing):
 
 ```bash
 WATCH_DETAIL=balanced

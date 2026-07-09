@@ -170,8 +170,8 @@
   </div>
   <div class="grid g4" style="margin-top:26px">
     <div class="card"><h3>1 · Download</h3><p><code>yt-dlp</code> checa legendas antes de tudo. Se existirem (e no modo transcript), nada de vídeo é baixado.</p></div>
-    <div class="card"><h3>2 · Frames</h3><p><code>ffmpeg</code> extrai keyframes rápidos (<code>efficient</code>) ou frames por corte de cena (<code>balanced</code>), 512px, 2 fps máx.</p></div>
-    <div class="card"><h3>3 · Dedup</h3><p>Um passe de diferença de brilho descarta frames quase-idênticos (slide parado, tela estática) antes de contar o orçamento.</p></div>
+    <div class="card"><h3>2 · Frames</h3><p><code>ffmpeg</code> extrai keyframes rápidos (<code>efficient</code>) ou frames por corte de cena (<code>balanced</code>), 512px, 2 fps máx. Em <code>efficient</code>, só puxa os keyframes que o próprio vídeo já guarda a cada ~1s (<code>-skip_frame nokey</code>) — sem redecodificar e comparar quadro a quadro, por isso é bem mais rápido que a varredura de cena completa.</p></div>
+    <div class="card"><h3>3 · Dedup</h3><p>Cada frame vira uma miniatura e é comparado com a última mantida; diferença de pixel abaixo do limiar descarta o quadro (slide parado, tela estática) antes de contar o orçamento — só paga por frame que muda de verdade.</p></div>
     <div class="card"><h3>4 · Transcript</h3><p>Legendas nativas (grátis) primeiro; se faltarem, extrai um áudio mono 16 kHz e manda pro Whisper (Groq ou OpenAI).</p></div>
   </div>
 </div></section>
@@ -237,8 +237,14 @@ OPENAI_API_KEY=<span class="s">...</span></pre></div>
       </tbody>
     </table></div>
 <pre style="margin-top:16px"><span class="k">/watch</span> <span class="s">$URL</span> --detail efficient          <span class="c"># passe rápido de 50 keyframes</span>
-<span class="k">/watch</span> <span class="s">$URL</span> --resolution 1024           <span class="c"># ler texto na tela (slides, terminal)</span>
-<span class="k">/watch</span> <span class="s">$URL</span> --timestamps 4:32,7:10       <span class="c"># frames nos momentos que a fala aponta</span></pre>
+<span class="k">/watch</span> <span class="s">$URL</span> --resolution 1024           <span class="c"># ler texto na tela (slides, terminal)</span></pre>
+  </div></div>
+
+  <div class="step"><div class="b">6</div><div>
+    <h3>Pegar o frame que a fala aponta ("olha aqui")</h3>
+    <p>Seleção por cena/keyframe pode passar batido quando alguém aponta pra tela sem cortar de cena — "olha aqui", "como vocês estão vendo", "repara nisso". O agente lê o transcript primeiro, identifica esses momentos e roda de novo com <code>--timestamps</code> pra forçar um frame exatamente ali. É julgamento do agente, não regex — e os frames de pista entram somados ao que o <code>--detail</code> já tinha escolhido, sem serem descartados pelo corte de orçamento.</p>
+<pre><span class="k">/watch</span> <span class="s">$URL</span> --detail transcript         <span class="c"># 1. transcript com timestamps primeiro</span>
+<span class="k">/watch</span> <span class="s">$URL</span> --timestamps 4:32,7:10,9:55 <span class="c"># 2. re-roda nos momentos em que a fala aponta pra tela</span></pre>
   </div></div>
 </div></section>
 
@@ -263,6 +269,7 @@ OPENAI_API_KEY=<span class="s">...</span></pre></div>
   <div class="phase"><div class="tag">Frames</div><div class="d"><strong>Dial de 4 modos + 2 fps máx</strong><span><code>transcript</code>, <code>efficient</code> (keyframes), <code>balanced</code> (cena) e <code>token-burner</code> (sem cap). Orçamento de frames por duração pra não estourar o contexto.</span></div></div>
   <div class="phase"><div class="tag">Dedup</div><div class="d"><strong>Colapsa quadros quase-idênticos</strong><span>Passe de diferença de brilho contra o último frame mantido; slide parado ou tela estática não gasta o orçamento. <code>--no-dedup</code> desliga.</span></div></div>
   <div class="phase"><div class="tag">Foco</div><div class="d"><strong>Janela com <code>--start</code>/<code>--end</code></strong><span>Orçamento mais denso no trecho pedido; transcript filtrado pro mesmo intervalo; timestamps sempre em tempo absoluto do vídeo.</span></div></div>
+  <div class="phase"><div class="tag">Pistas</div><div class="d"><strong>Frames por pista dedítica com <code>--timestamps</code></strong><span>O agente lê o transcript, identifica onde a fala aponta pra tela ("olha aqui", "como vocês veem") e força um frame ali — somado ao que a seleção por cena já pegou, sem ser descartado pelo corte de orçamento.</span></div></div>
   <div class="phase"><div class="tag">Multi-host</div><div class="d"><strong>Uma skill, +50 hosts</strong><span>Claude Code (plugin/marketplace), Codex, Cursor, Copilot, Gemini CLI via <code>npx skills</code>, e claude.ai por bundle <code>.skill</code>.</span></div></div>
 </div></section>
 

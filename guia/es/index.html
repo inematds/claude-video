@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+
+<html lang="es">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<title>/watch — dale a tu agente la capacidad de ver videos</title>
+<meta content="Agent Skill que le da a tu agente una entrada de video: pega una URL o un archivo, haz una pregunta y el agente ve los frames y escucha la transcripción. Funciona en Claude Code, Codex, Cursor, Copilot, Gemini CLI y +50 hosts." name="description"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet"/>
+<style>
+  :root{
+    --bg:#0c0c10; --bg2:#14141b; --card:#16161e; --line:#272730;
+    --txt:#e9e9ee; --mut:#9a9aa6; --amb:#E2A23B; --amb2:#f0c070; --sky:#38bdf8; --pro:#cbd5e1;
+    color-scheme:dark;
+  }
+  body.light{
+    --bg:#f6f7f9; --bg2:#eceef2; --card:#ffffff; --line:#e1e3ea;
+    --txt:#1a1a22; --mut:#5b5b68; --amb:#b9791d; --amb2:#a16207; --sky:#0369a1; --pro:#b45309;
+    color-scheme:light;
+  }
+  body.light .hero .glow{opacity:.5}
+  body.light pre{background:#0e0e14;color:#d6d6e0}
+  body.light pre .c{color:#8a8a98}
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--bg);color:var(--txt);font:16px/1.65 Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:Sora,sans-serif;line-height:1.15;margin:0}
+  a{color:var(--amb);text-decoration:none}
+  code,pre{font-family:"JetBrains Mono",monospace}
+  .wrap{max-width:1160px;margin:0 auto;padding:0 22px}
+  .mut{color:var(--mut)} .amb{color:var(--amb)}
+  .chip{display:inline-block;font-size:.72rem;letter-spacing:.14em;text-transform:uppercase;color:var(--amb);font-weight:600;font-family:Sora}
+  nav{position:sticky;top:0;z-index:30;backdrop-filter:blur(12px);background:rgba(12,12,16,.78);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;gap:22px;height:60px}
+  nav .brand{display:flex;align-items:center;gap:8px;font-family:Sora;font-weight:800;letter-spacing:-.02em;color:var(--amb)}
+  nav .brand .emoji{font-size:1.25rem}
+  nav .sep{color:var(--mut);opacity:.45}
+  nav .inema{color:var(--sky);font-weight:600;font-size:.88rem;font-family:Sora}
+  nav .inema:hover{filter:brightness(1.15)}
+  nav .pro{color:var(--pro);font-weight:600;font-size:.88rem;font-family:Sora}
+  nav .pro:hover{filter:brightness(1.15)}
+  nav .clubpro{display:inline-flex;align-items:center;gap:6px}
+  nav .links{margin-left:auto;display:flex;align-items:center;gap:20px;font-size:.92rem}
+  nav .links a.sec{color:var(--mut)} nav .links a.sec:hover{color:var(--txt)}
+  .tgl{background:var(--bg2);border:1px solid var(--line);color:var(--txt);width:38px;height:38px;border-radius:10px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;font-size:1.05rem}
+  .tgl:hover{border-color:var(--amb)}
+  .btn{display:inline-block;background:var(--amb);color:#1a1206;font-weight:600;padding:.6em 1.05em;border-radius:10px;font-family:Sora}
+  .btn.ghost{background:transparent;color:var(--txt);border:1px solid var(--line)}
+  @media(max-width:760px){nav .links a.sec{display:none}}
+  .hero{position:relative;overflow:hidden;border-bottom:1px solid var(--line)}
+  .hero .glow{position:absolute;inset:-40% -20% auto auto;width:70%;height:600px;background:radial-gradient(closest-side,rgba(226,162,59,.22),transparent 70%);pointer-events:none}
+  .hero .wrap{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center;padding:74px 22px}
+  .hero h1{font-size:clamp(2.2rem,5vw,3.5rem);font-weight:800;letter-spacing:-.025em}
+  .hero p.lead{font-size:1.18rem;color:var(--mut);margin:1.1em 0 1.6em;max-width:38ch}
+  .hero .cta{display:flex;gap:12px;flex-wrap:wrap}
+  .hero figure{margin:0;border-radius:16px;overflow:hidden;border:1px solid var(--line);box-shadow:0 30px 80px -30px #000}
+  .hero figure img{width:100%;display:block}
+  @media(max-width:780px){.hero .wrap{grid-template-columns:1fr;padding:48px 22px}}
+  section{padding:62px 0;border-bottom:1px solid var(--line)}
+  section h2{font-size:clamp(1.5rem,3.4vw,2.1rem);font-weight:800;letter-spacing:-.02em}
+  section .sub{color:var(--mut);margin:.6em 0 2em;max-width:62ch}
+  .grid{display:grid;gap:16px}
+  .g3{grid-template-columns:repeat(3,1fr)} .g4{grid-template-columns:repeat(4,1fr)} .g2{grid-template-columns:repeat(2,1fr)}
+  @media(max-width:820px){.g3,.g4{grid-template-columns:1fr 1fr}}
+  @media(max-width:540px){.g2,.g3,.g4{grid-template-columns:1fr}}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:20px}
+  .card h3{font-size:1.05rem;margin-bottom:.4em}
+  .card p{color:var(--mut);font-size:.92rem;margin:0}
+  .card pre{margin:.9em 0 0}
+  .num{display:inline-flex;width:30px;height:30px;align-items:center;justify-content:center;border-radius:8px;background:rgba(226,162,59,.14);color:var(--amb);font-family:Sora;font-weight:800;font-size:.9rem;margin-bottom:.7em}
+  .flow{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+  .flow span{background:var(--bg2);border:1px solid var(--line);border-radius:999px;padding:.45em .9em;font-size:.85rem;font-family:Sora;font-weight:600}
+  .flow .arr{color:var(--amb);border:none;background:none;padding:0 .1em}
+  pre{background:#0a0a0e;border:1px solid var(--line);border-radius:12px;padding:16px 18px;overflow:auto;font-size:.86rem;line-height:1.6;color:#d6d6e0}
+  pre .c{color:#6f6f7c} pre .k{color:var(--amb2)} pre .s{color:#9ece6a}
+  .step{display:grid;grid-template-columns:46px 1fr;gap:16px;margin-bottom:26px}
+  .step .b{width:46px;height:46px;border-radius:12px;background:var(--amb);color:#1a1206;font-family:Sora;font-weight:800;font-size:1.25rem;display:flex;align-items:center;justify-content:center}
+  .step h3{font-size:1.12rem;margin-bottom:.3em}
+  .step p{color:var(--mut);margin:.2em 0 .7em}
+  .ex{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+  @media(max-width:680px){.ex{grid-template-columns:1fr}}
+  .ex figure{margin:0;border-radius:14px;overflow:hidden;border:1px solid var(--line)}
+  .ex figure img{width:100%;display:block}
+  .ex figcaption{padding:12px 14px;font-size:.88rem;color:var(--mut);background:var(--card)}
+  table.tbl{width:100%;border-collapse:collapse;margin-top:8px;font-size:.9rem}
+  table.tbl th,table.tbl td{text-align:left;padding:11px 14px;border-bottom:1px solid var(--line)}
+  table.tbl th{font-family:Sora;color:var(--amb);font-weight:600;font-size:.82rem;letter-spacing:.02em}
+  table.tbl td code{background:var(--bg2);border:1px solid var(--line);border-radius:6px;padding:.08em .4em;font-size:.85em}
+  .tblwrap{overflow-x:auto;border:1px solid var(--line);border-radius:12px}
+  .phase{display:flex;gap:14px;padding:16px 0;border-bottom:1px solid var(--line)}
+  .phase:last-child{border:none}
+  .phase .tag{flex:0 0 122px;font-family:Sora;font-weight:800;color:var(--amb)}
+  .phase .d strong{display:block;margin-bottom:.2em}
+  .phase .d span{color:var(--mut);font-size:.92rem}
+  footer{padding:46px 0;text-align:center;color:var(--mut);font-size:.9rem}
+  .pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:.3em .8em;font-size:.78rem;color:var(--mut);margin:0 4px}
+</style>
+<link href="https://inematds.github.io/claude-video/guia/" hreflang="pt-BR" rel="alternate"/><link href="https://inematds.github.io/claude-video/guia/en/" hreflang="en" rel="alternate"/><link href="https://inematds.github.io/claude-video/guia/es/" hreflang="es" rel="alternate"/></head>
+<body><div class="inema-lang" style="position:fixed;right:14px;bottom:14px;z-index:9999;display:flex;gap:2px;padding:4px;border-radius:10px;background:rgba(12,12,16,.82);border:1px solid rgba(226,162,59,.45);font:600 12px/1 Sora,Inter,system-ui,sans-serif;backdrop-filter:blur(8px)" translate="no"><a href="../" hreflang="pt-BR" style="padding:6px 8px;border-radius:7px;text-decoration:none;color:#e9e9ee">PT</a><a href="../en/" hreflang="en" style="padding:6px 8px;border-radius:7px;text-decoration:none;color:#e9e9ee">EN</a><a href="./" hreflang="es" style="padding:6px 8px;border-radius:7px;text-decoration:none;color:#1a1206;background:#E2A23B">ES</a></div>
+<nav><div class="wrap">
+<a class="brand" href="#top"><span class="emoji">🎬</span> /watch</a>
+<span class="sep">|</span>
+<span class="clubpro">
+<a class="inema" href="https://inema.club" rel="noopener" target="_blank">INEMA.CLUB</a>
+<span class="sep">-</span>
+<a class="pro" href="https://inema.pro" rel="noopener" target="_blank">PRO</a>
+</span>
+<div class="links">
+<a class="sec" href="#oque">Qué es</a>
+<a class="sec" href="#fluxo">Cómo funciona</a>
+<a class="sec" href="#guia">Guía de uso</a>
+<a class="sec" href="#exemplos">Ejemplos</a>
+<a class="sec" href="#roadmap">Recursos</a>
+<button aria-label="Cambiar el tema" class="tgl" id="themeToggle" title="Cambiar el tema">🌙</button>
+<a class="btn" href="https://github.com/inematds/claude-video" rel="noopener" target="_blank">GitHub</a>
+</div>
+</div></nav>
+<header class="hero" id="top">
+<div class="glow"></div>
+<div class="wrap">
+<div>
+<span class="chip">Agent Skill · /watch</span>
+<h1>Tu agente <span class="amb">ve</span> el video; no lo adivina por el título.</h1>
+<p class="lead">Pega una URL o un archivo y haz la pregunta. El agente obtiene los subtítulos, extrae fotogramas, transcribe el audio y <em>lee cada fotograma como imagen</em>. Responde como si hubiera visto el video.</p>
+<div class="cta">
+<a class="btn" href="#guia">Empezar la guía</a>
+<a class="btn ghost" href="https://github.com/inematds/claude-video" rel="noopener" target="_blank">Ver en GitHub</a>
+</div>
+</div>
+<figure><pre><span class="c"># pega la URL + la pregunta</span>
+<span class="k">/watch</span> <span class="s">https://youtu.be/…</span> o que acontece em 0:30?
+
+<span class="c">▸ yt-dlp   subtítulos encontrados (auto)</span>
+<span class="c">▸ ffmpeg   42 frames · scene-aware</span>
+<span class="c">▸ transc.   captions · 0:00 → 3:12</span>
+<span class="c">▸ Claude leyó 42 imágenes + transcript</span>
+
+<span class="k">→</span> Em 0:30 aparece o menu de config,
+   e a narração explica o passo 2…</pre></figure>
+</div>
+</header>
+<section id="oque"><div class="wrap">
+<span class="chip">Qué es</span>
+<h2>Una entrada de video para tu agente</h2>
+<p class="sub">El agente lee páginas, ejecuta scripts y navega repositorios. Lo que él <em>no</em> hace de fábrica es ver un video. Esta skill le da ese sentido: Python puro con la biblioteca estándar para orquestar <code>yt-dlp</code> + <code>ffmpeg</code> + una API Whisper opcional.</p>
+<div class="grid g3">
+<div class="card"><h3>👁️ Ve y escucha</h3><p>Fotogramas extraídos como JPEG + transcripción con marcas de tiempo. El agente da <code>Read</code> en cada fotograma: la imagen se incorpora directamente al contexto y se alinea con lo que se dijo.</p></div>
+<div class="card"><h3>🌐 Cualquier fuente</h3><p>URL de YouTube, TikTok, Loom, X, Vimeo, Twitch y cientos de sitios más mediante <code>yt-dlp</code> — o un archivo local <code>.mp4 .mov .mkv .webm</code>.</p></div>
+<div class="card"><h3>🧩 Multi-host</h3><p>Una carpeta de skill autocontenida se instala en Claude Code, Codex, Cursor, Copilot, Gemini CLI y más de 50 hosts de <a href="https://agentskills.io" rel="noopener" target="_blank">Agent Skills</a>. Sin configuración para empezar.</p></div>
+</div>
+</div></section>
+<section id="fluxo"><div class="wrap">
+<span class="chip">Cómo funciona</span>
+<h2>Primero los subtítulos; descarga solo lo necesario</h2>
+<p class="sub">La prioridad es gastar lo mínimo: en el modo <code>transcript</code>, una URL con subtítulos se devuelve sin descargar ningún video. Cuando se necesitan frames, descarga y extrae solo los que requiere la ejecución.</p>
+<div class="flow">
+<span>URL / archivo + pregunta</span><span class="arr">→</span>
+<span>yt-dlp · subtítulos</span><span class="arr">→</span>
+<span>ffmpeg · fotogramas</span><span class="arr">→</span>
+<span>deduplicación</span><span class="arr">→</span>
+<span>transcripción</span><span class="arr">→</span>
+<span>Claude Read</span><span class="arr">→</span>
+<span>respuesta + marcas de tiempo</span><span class="arr">→</span>
+<span>limpieza</span>
+</div>
+<div class="grid g4" style="margin-top:26px">
+<div class="card"><h3>1 · Descarga</h3><p><code>yt-dlp</code> revisa primero si hay subtítulos. Si existen (y estás en modo transcripción), no se descarga ningún video.</p></div>
+<div class="card"><h3>2 · Frames</h3><p><code>ffmpeg</code> extrae fotogramas clave rápidamente (<code>efficient</code>) o frames por corte de escena (<code>balanced</code>), 512px, 2 fps máx. En <code>efficient</code>, solo extrae los keyframes que el propio video ya guarda cada ~1s (<code>-skip_frame nokey</code>) — sin volver a decodificar y comparar cuadro a cuadro, por eso es mucho más rápido que el análisis completo de escenas.</p></div>
+<div class="card"><h3>3 · Deduplicación</h3><p>Cada frame se convierte en una miniatura y se compara con el último que se conservó; si la diferencia de píxeles está por debajo del umbral, se descarta el cuadro (diapositiva sin movimiento, pantalla estática) antes de contabilizar el presupuesto: solo cuenta un frame que realmente cambia.</p></div>
+<div class="card"><h3>4 · Transcripción</h3><p>Primero, subtítulos nativos (gratis); si faltan, extrae el audio mono de 16 kHz y envíalo a Whisper (Groq u OpenAI).</p></div>
+</div>
+</div></section>
+<section id="pre"><div class="wrap">
+<span class="chip">Requisitos previos</span>
+<h2>Dos dependencias y una clave opcional</h2>
+<p class="sub">Los subtítulos cubren la mayoría de los videos públicos gratis. La clave de Whisper solo se usa cuando el video realmente no tiene subtítulos (archivos locales, algunos TikToks/Vimeos).</p>
+<div class="grid g2">
+<div class="card"><h3>⚙️ yt-dlp + ffmpeg</h3><p>Se instalan en la primera ejecución. En macOS, automáticamente vía <code>brew</code>; Linux/Windows imprimen el comando exacto. Las próximas veces, el preflight es una consulta &lt;100 ms.</p><pre><span class="c"># preflight + instalador (idempotente)</span>
+<span class="k">python3</span> scripts/setup.py</pre></div>
+<div class="card"><h3>🔑 Clave Whisper (opcional)</h3><p><a href="https://console.groq.com/keys" rel="noopener" target="_blank">Groq</a> (preferido — más barato y rápido, <code>whisper-large-v3</code>) o <a href="https://platform.openai.com/api-keys" rel="noopener" target="_blank">OpenAI</a> (<code>whisper-1</code>). Sin clave, los videos sin subtítulos devuelven solo frames.</p><pre><span class="c"># ~/.config/watch/.env  (modo 0600)</span>
+GROQ_API_KEY=<span class="s">...</span>
+<span class="c"># o</span>
+OPENAI_API_KEY=<span class="s">...</span></pre></div>
+</div>
+</div></section>
+<section id="guia"><div class="wrap">
+<span class="chip">Guía de uso · paso a paso</span>
+<h2>Desde la instalación hasta la primera respuesta</h2>
+<p class="sub">Instala en tu herramienta, pega una URL y pregunta. El resto —subtítulos, descarga, fotogramas, transcripción— lo resuelve el script.</p>
+<div class="step"><div class="b">1</div><div>
+<h3>Instalar en Claude Code</h3>
+<p>Agrega el marketplace local e instala el plugin. Luego actualiza con <code>/plugin update watch@claude-video</code>.</p>
+<pre><span class="k">/plugin</span> marketplace add inematds/claude-video
+<span class="k">/plugin</span> install watch@claude-video</pre>
+</div></div>
+<div class="step"><div class="b">2</div><div>
+<h3>…o en Codex, Cursor, Copilot, Gemini CLI (+50)</h3>
+<p>La CLI de <a href="https://agentskills.io" rel="noopener" target="_blank">Agent Skills</a> detecta los hosts y copia toda la skill. <code>-g</code> instálala globalmente; elimínala para limitarla al proyecto.</p>
+<pre><span class="k">npx</span> skills add inematds/claude-video -g  <span class="c"># global para tu usuario</span></pre>
+</div></div>
+<div class="step"><div class="b">3</div><div>
+<h3>Ver</h3>
+<p>Fuente (URL o ruta) + la pregunta. Si no haces ninguna pregunta, genera un resumen estructurado con los momentos clave.</p>
+<pre><span class="k">/watch</span> <span class="s">https://youtu.be/dQw4w9WgXcQ</span> o que acontece no minuto 0:30?
+<span class="k">/watch</span> <span class="s">~/Movies/screen-recording.mp4</span> quando a UI quebra?
+<span class="k">/watch</span> <span class="s">https://www.tiktok.com/@user/video/123</span> resume isso</pre>
+</div></div>
+<div class="step"><div class="b">4</div><div>
+<h3>Enfocarse en un fragmento (más fotogramas, menos tokens)</h3>
+<p>Cuando la pregunta sea sobre un momento, pasa <code>--start</code>/<code>--end</code> (acepta <code>SS</code>, <code>MM:SS</code>, <code>HH:MM:SS</code>). El presupuesto de frames se vuelve más denso y la transcripción se filtra al mismo intervalo.</p>
+<pre><span class="k">/watch</span> <span class="s">$URL</span> --start 2:15 --end 2:45   <span class="c"># zoom en 30 s a 2 fps</span>
+<span class="k">/watch</span> video.mp4 --start 50 --end 60   <span class="c"># últimos 10 s</span>
+<span class="k">/watch</span> <span class="s">$URL</span> --start 1:12:00           <span class="c"># desde 1h12m hasta el final</span></pre>
+</div></div>
+<div class="step"><div class="b">5</div><div>
+<h3>Ajustar el nivel de detalle (un dial)</h3>
+<p>Cambia fidelidad por velocidad y costo de tokens. Predeterminado <code>balanced</code>. Fija el valor predeterminado con <code>WATCH_DETAIL=</code> en el <code>~/.config/watch/.env</code>.</p>
+<div class="tblwrap"><table class="tbl">
+<thead><tr><th>Modo</th><th>Fotogramas</th><th>Uso</th></tr></thead>
+<tbody>
+<tr><td><code>transcript</code></td><td>0</td><td>Solo transcripción; omite la descarga cuando hay subtítulos.</td></tr>
+<tr><td><code>efficient</code></td><td>hasta 50</td><td>Keyframes rápidos (~0,5 s de extracción).</td></tr>
+<tr><td><code>balanced</code></td><td>hasta 100</td><td>Fotogramas por corte de escena. Predeterminado.</td></tr>
+<tr><td><code>token-burner</code></td><td>sin límite</td><td>Escena, sin límite de duración: cobertura máxima en videos largos.</td></tr>
+</tbody>
+</table></div>
+<pre style="margin-top:16px"><span class="k">/watch</span> <span class="s">$URL</span> --detail efficient          <span class="c"># pasada rápida de 50 keyframes</span>
+<span class="k">/watch</span> <span class="s">$URL</span> --resolution 1024           <span class="c"># leer el texto en pantalla (diapositivas, terminal)</span></pre>
+</div></div>
+<div class="step"><div class="b">6</div><div>
+<h3>Obtener el fotograma que señala el habla ("mira aquí")</h3>
+<p>La selección por escena/keyframe puede pasar por alto cuando alguien señala la pantalla sin cambiar de escena: "mira aquí", "como están viendo", "fíjate en esto". El agente lee primero la transcripción, identifica esos momentos y vuelve a ejecutar con <code>--timestamps</code> para forzar un fotograma exactamente allí. Es criterio del agente, no una regex, y los fotogramas de pista se suman a lo que el <code>--detail</code> ya había elegido, sin que se descarten por el límite de presupuesto.</p>
+<pre><span class="k">/watch</span> <span class="s">$URL</span> --detail transcript         <span class="c"># 1. primero, transcripción con marcas de tiempo</span>
+<span class="k">/watch</span> <span class="s">$URL</span> --timestamps 4:32,7:10,9:55 <span class="c"># 2. vuelve a ejecutar en los momentos en que lo que se dice apunta a la pantalla</span></pre>
+</div></div>
+</div></section>
+<section id="exemplos"><div class="wrap">
+<span class="chip">Ejemplos</span>
+<h2>Para qué lo usa realmente la gente</h2>
+<p class="sub">La ventaja aparece cuando el <em>cómo</em> importa tanto como el <em>qué</em> — hooks de video, errores en grabaciones de pantalla, resúmenes de contenido largo.</p>
+<div class="grid g2">
+<div class="card"><h3>🎯 Analizar contenido de terceros</h3><p>Mira los primeros fotogramas y el inicio de la transcripción, y desglosa la estructura de un video viral, un anuncio creativo o la intro de un podcast.</p><pre><span class="k">/watch</span> <span class="s">$URL</span> qual foi o hook de abertura?</pre></div>
+<div class="card"><h3>🐞 Diagnosticar un error</h3><p>¿Recibiste una grabación de pantalla de algo que no funciona? Encuentra el fotograma donde aparece el problema y lo describe; muchas veces detecta la causa.</p><pre><span class="k">/watch</span> bug-repro.mov o que está dando errado?</pre></div>
+<div class="card"><h3>📝 Resumir un video</h3><p>Extrae la estructura, los momentos clave y lo que realmente se dijo y se mostró. Más rápido que verlo a 2×.</p><pre><span class="k">/watch</span> <span class="s">$URL</span> resume isso</pre></div>
+<div class="card"><h3>✂️ Filtrar el hype de una actualización</h3><p>Reduce un "game-changer" a las pocas cosas que importan: sustancia sin diez minutos de introducción ni exageraciones.</p><pre><span class="k">/watch</span> <span class="s">$URL</span> o que é NOVO de verdade — pula o hype</pre></div>
+</div>
+</div></section>
+<section id="roadmap"><div class="wrap">
+<span class="chip">Recursos · v0.2.0</span>
+<h2>Lo que ya está disponible</h2>
+<p class="sub">Skill autocontenida, solo con la biblioteca estándar. Cada línea de abajo describe un comportamiento que existe hoy, no una hoja de ruta futura.</p>
+<div class="phase"><div class="tag">Subtítulos</div><div class="d"><strong>Primero, transcripción gratis</strong><span>yt-dlp obtiene subtítulos manuales o automáticos de la propia fuente. En el modo <code>transcript</code>, una URL con subtítulos ni siquiera descarga el video.</span></div></div>
+<div class="phase"><div class="tag">Whisper</div><div class="d"><strong>Alternativa con auto-chunking</strong><span>Sin subtítulos, extrae el audio mono de 16 kHz y lo transcribe en Groq (preferido) u OpenAI. El audio de más de 25 MB se divide y se vuelve a unir automáticamente.</span></div></div>
+<div class="phase"><div class="tag">Fotogramas</div><div class="d"><strong>Selector de 4 modos + máximo 2 fps</strong><span><code>transcript</code>, <code>efficient</code> (keyframes), <code>balanced</code> (escena) y <code>token-burner</code> (sin límite). Presupuesto de frames por duración para no exceder el contexto.</span></div></div>
+<div class="phase"><div class="tag">Dedup</div><div class="d"><strong>Colapsa fotogramas casi idénticos</strong><span>Compara el brillo con el último fotograma conservado; una diapositiva quieta o una pantalla estática no consume el presupuesto. <code>--no-dedup</code> desactiva.</span></div></div>
+<div class="phase"><div class="tag">Enfoque</div><div class="d"><strong>Ventana con <code>--start</code>/<code>--end</code></strong><span>Presupuesto más denso en el fragmento solicitado; transcripción filtrada al mismo intervalo; las marcas de tiempo siempre corresponden al tiempo absoluto del video.</span></div></div>
+<div class="phase"><div class="tag">Pistas</div><div class="d"><strong>Fotogramas por pista dedítica con <code>--timestamps</code></strong><span>El agente lee la transcripción, identifica dónde el habla señala la pantalla ("mira aquí", "como pueden ver") y fuerza un fotograma ahí, sumado a los que ya seleccionó por escena, sin que el recorte del presupuesto lo descarte.</span></div></div>
+<div class="phase"><div class="tag">Multi-host</div><div class="d"><strong>Una skill, más de 50 hosts</strong><span>Claude Code (plugin/marketplace), Codex, Cursor, Copilot, Gemini CLI vía <code>npx skills</code>, y claude.ai por bundle <code>.skill</code>.</span></div></div>
+</div></section>
+<footer>
+<div class="wrap">
+<div class="pill">Python stdlib</div><div class="pill">yt-dlp</div><div class="pill">ffmpeg</div><div class="pill">Whisper</div><div class="pill">Agent Skills</div><div class="pill">MIT</div>
+<p style="margin-top:18px">/watch · dale a tu agente la capacidad de ver videos ·
+      <a href="https://github.com/inematds/claude-video">github.com/inematds/claude-video</a> ·
+      <a href="https://inema.club">INEMA.CLUB</a></p>
+</div>
+</footer>
+<script>
+  (function(){
+    var KEY='watch-theme';
+    var b=document.body, t=document.getElementById('themeToggle');
+    if(localStorage.getItem(KEY)==='light'){ b.classList.add('light'); t.textContent='☀️'; }
+    t.addEventListener('click',function(){
+      var light=b.classList.toggle('light');
+      t.textContent=light?'☀️':'🌙';
+      localStorage.setItem(KEY, light?'light':'dark');
+    });
+  })();
+</script>
+</body>
+</html>

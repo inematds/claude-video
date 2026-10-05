@@ -1,13 +1,14 @@
 <!DOCTYPE html>
+
 <html lang="pt-BR">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
 <title>/watch — dê ao seu agente a capacidade de assistir vídeo</title>
-<meta name="description" content="Agent Skill que dá ao seu agente um input de vídeo: cola uma URL ou arquivo, faz uma pergunta, e o agente vê os frames e ouve o transcript. Roda em Claude Code, Codex, Cursor, Copilot, Gemini CLI e +50 hosts.">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<meta content="Agent Skill que dá ao seu agente um input de vídeo: cola uma URL ou arquivo, faz uma pergunta, e o agente vê os frames e ouve o transcript. Roda em Claude Code, Codex, Cursor, Copilot, Gemini CLI e +50 hosts." name="description"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&amp;family=Inter:wght@400;500;600&amp;family=JetBrains+Mono:wght@400;600&amp;display=swap" rel="stylesheet"/>
 <style>
   :root{
     --bg:#0c0c10; --bg2:#14141b; --card:#16161e; --line:#272730;
@@ -96,41 +97,39 @@
   footer{padding:46px 0;text-align:center;color:var(--mut);font-size:.9rem}
   .pill{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:.3em .8em;font-size:.78rem;color:var(--mut);margin:0 4px}
 </style>
-</head>
-<body>
-
+<link href="https://inematds.github.io/claude-video/guia/" hreflang="pt-BR" rel="alternate"/><link href="https://inematds.github.io/claude-video/guia/en/" hreflang="en" rel="alternate"/><link href="https://inematds.github.io/claude-video/guia/es/" hreflang="es" rel="alternate"/></head>
+<body><div class="inema-lang" style="position:fixed;right:14px;bottom:14px;z-index:9999;display:flex;gap:2px;padding:4px;border-radius:10px;background:rgba(12,12,16,.82);border:1px solid rgba(226,162,59,.45);font:600 12px/1 Sora,Inter,system-ui,sans-serif;backdrop-filter:blur(8px)" translate="no"><a href="./" hreflang="pt-BR" style="padding:6px 8px;border-radius:7px;text-decoration:none;color:#1a1206;background:#E2A23B">PT</a><a href="en/" hreflang="en" style="padding:6px 8px;border-radius:7px;text-decoration:none;color:#e9e9ee">EN</a><a href="es/" hreflang="es" style="padding:6px 8px;border-radius:7px;text-decoration:none;color:#e9e9ee">ES</a></div>
 <nav><div class="wrap">
-  <a class="brand" href="#top"><span class="emoji">🎬</span> /watch</a>
-  <span class="sep">|</span>
-  <span class="clubpro">
-    <a class="inema" href="https://inema.club" target="_blank" rel="noopener">INEMA.CLUB</a>
-    <span class="sep">-</span>
-    <a class="pro" href="https://inema.pro" target="_blank" rel="noopener">PRO</a>
-  </span>
-  <div class="links">
-    <a class="sec" href="#oque">O que é</a>
-    <a class="sec" href="#fluxo">Como funciona</a>
-    <a class="sec" href="#guia">Guia de uso</a>
-    <a class="sec" href="#exemplos">Exemplos</a>
-    <a class="sec" href="#roadmap">Recursos</a>
-    <button class="tgl" id="themeToggle" aria-label="Alternar tema" title="Alternar tema">🌙</button>
-    <a class="btn" href="https://github.com/inematds/claude-video" target="_blank" rel="noopener">GitHub</a>
-  </div>
+<a class="brand" href="#top"><span class="emoji">🎬</span> /watch</a>
+<span class="sep">|</span>
+<span class="clubpro">
+<a class="inema" href="https://inema.club" rel="noopener" target="_blank">INEMA.CLUB</a>
+<span class="sep">-</span>
+<a class="pro" href="https://inema.pro" rel="noopener" target="_blank">PRO</a>
+</span>
+<div class="links">
+<a class="sec" href="#oque">O que é</a>
+<a class="sec" href="#fluxo">Como funciona</a>
+<a class="sec" href="#guia">Guia de uso</a>
+<a class="sec" href="#exemplos">Exemplos</a>
+<a class="sec" href="#roadmap">Recursos</a>
+<button aria-label="Alternar tema" class="tgl" id="themeToggle" title="Alternar tema">🌙</button>
+<a class="btn" href="https://github.com/inematds/claude-video" rel="noopener" target="_blank">GitHub</a>
+</div>
 </div></nav>
-
 <header class="hero" id="top">
-  <div class="glow"></div>
-  <div class="wrap">
-    <div>
-      <span class="chip">Agent Skill · /watch</span>
-      <h1>Seu agente <span class="amb">assiste</span> o vídeo — não adivinha pelo título.</h1>
-      <p class="lead">Cola uma URL ou um arquivo, faz a pergunta. O agente puxa legendas, extrai frames, transcreve o áudio e <em>lê cada frame como imagem</em>. Ele responde como quem assistiu.</p>
-      <div class="cta">
-        <a class="btn" href="#guia">Começar o guia</a>
-        <a class="btn ghost" href="https://github.com/inematds/claude-video" target="_blank" rel="noopener">Ver no GitHub</a>
-      </div>
-    </div>
-    <figure><pre><span class="c"># cola a URL + a pergunta</span>
+<div class="glow"></div>
+<div class="wrap">
+<div>
+<span class="chip">Agent Skill · /watch</span>
+<h1>Seu agente <span class="amb">assiste</span> o vídeo — não adivinha pelo título.</h1>
+<p class="lead">Cola uma URL ou um arquivo, faz a pergunta. O agente puxa legendas, extrai frames, transcreve o áudio e <em>lê cada frame como imagem</em>. Ele responde como quem assistiu.</p>
+<div class="cta">
+<a class="btn" href="#guia">Começar o guia</a>
+<a class="btn ghost" href="https://github.com/inematds/claude-video" rel="noopener" target="_blank">Ver no GitHub</a>
+</div>
+</div>
+<figure><pre><span class="c"># cola a URL + a pergunta</span>
 <span class="k">/watch</span> <span class="s">https://youtu.be/…</span> o que acontece em 0:30?
 
 <span class="c">▸ yt-dlp   legendas encontradas (auto)</span>
@@ -140,148 +139,134 @@
 
 <span class="k">→</span> Em 0:30 aparece o menu de config,
    e a narração explica o passo 2…</pre></figure>
-  </div>
+</div>
 </header>
-
 <section id="oque"><div class="wrap">
-  <span class="chip">O que é</span>
-  <h2>Um input de vídeo para o seu agente</h2>
-  <p class="sub">O agente lê página, roda script, navega repo. O que ele <em>não</em> faz de fábrica é assistir um vídeo. Esta skill dá esse sentido — Python puro-stdlib orquestrando <code>yt-dlp</code> + <code>ffmpeg</code> + uma API Whisper opcional.</p>
-  <div class="grid g3">
-    <div class="card"><h3>👁️ Vê e ouve</h3><p>Frames extraídos como JPEG + transcript com timestamps. O agente dá <code>Read</code> em cada frame — a imagem entra direto no contexto e alinha com o que foi dito.</p></div>
-    <div class="card"><h3>🌐 Qualquer fonte</h3><p>URL de YouTube, TikTok, Loom, X, Vimeo, Twitch e algumas centenas de sites via <code>yt-dlp</code> — ou um arquivo local <code>.mp4 .mov .mkv .webm</code>.</p></div>
-    <div class="card"><h3>🧩 Multi-host</h3><p>Uma pasta de skill self-contained instala em Claude Code, Codex, Cursor, Copilot, Gemini CLI e +50 hosts de <a href="https://agentskills.io" target="_blank" rel="noopener">Agent Skills</a>. Zero config pra começar.</p></div>
-  </div>
+<span class="chip">O que é</span>
+<h2>Um input de vídeo para o seu agente</h2>
+<p class="sub">O agente lê página, roda script, navega repo. O que ele <em>não</em> faz de fábrica é assistir um vídeo. Esta skill dá esse sentido — Python puro-stdlib orquestrando <code>yt-dlp</code> + <code>ffmpeg</code> + uma API Whisper opcional.</p>
+<div class="grid g3">
+<div class="card"><h3>👁️ Vê e ouve</h3><p>Frames extraídos como JPEG + transcript com timestamps. O agente dá <code>Read</code> em cada frame — a imagem entra direto no contexto e alinha com o que foi dito.</p></div>
+<div class="card"><h3>🌐 Qualquer fonte</h3><p>URL de YouTube, TikTok, Loom, X, Vimeo, Twitch e algumas centenas de sites via <code>yt-dlp</code> — ou um arquivo local <code>.mp4 .mov .mkv .webm</code>.</p></div>
+<div class="card"><h3>🧩 Multi-host</h3><p>Uma pasta de skill self-contained instala em Claude Code, Codex, Cursor, Copilot, Gemini CLI e +50 hosts de <a href="https://agentskills.io" rel="noopener" target="_blank">Agent Skills</a>. Zero config pra começar.</p></div>
+</div>
 </div></section>
-
 <section id="fluxo"><div class="wrap">
-  <span class="chip">Como funciona</span>
-  <h2>Legenda primeiro, download só do necessário</h2>
-  <p class="sub">A prioridade é gastar o mínimo: no modo <code>transcript</code>, uma URL legendada volta sem baixar vídeo nenhum. Quando precisa de frames, baixa e extrai só o que o run pede.</p>
-  <div class="flow">
-    <span>URL / arquivo + pergunta</span><span class="arr">→</span>
-    <span>yt-dlp · legendas</span><span class="arr">→</span>
-    <span>ffmpeg · frames</span><span class="arr">→</span>
-    <span>dedup</span><span class="arr">→</span>
-    <span>transcript</span><span class="arr">→</span>
-    <span>Claude Read</span><span class="arr">→</span>
-    <span>resposta + timestamps</span><span class="arr">→</span>
-    <span>cleanup</span>
-  </div>
-  <div class="grid g4" style="margin-top:26px">
-    <div class="card"><h3>1 · Download</h3><p><code>yt-dlp</code> checa legendas antes de tudo. Se existirem (e no modo transcript), nada de vídeo é baixado.</p></div>
-    <div class="card"><h3>2 · Frames</h3><p><code>ffmpeg</code> extrai keyframes rápidos (<code>efficient</code>) ou frames por corte de cena (<code>balanced</code>), 512px, 2 fps máx. Em <code>efficient</code>, só puxa os keyframes que o próprio vídeo já guarda a cada ~1s (<code>-skip_frame nokey</code>) — sem redecodificar e comparar quadro a quadro, por isso é bem mais rápido que a varredura de cena completa.</p></div>
-    <div class="card"><h3>3 · Dedup</h3><p>Cada frame vira uma miniatura e é comparado com a última mantida; diferença de pixel abaixo do limiar descarta o quadro (slide parado, tela estática) antes de contar o orçamento — só paga por frame que muda de verdade.</p></div>
-    <div class="card"><h3>4 · Transcript</h3><p>Legendas nativas (grátis) primeiro; se faltarem, extrai um áudio mono 16 kHz e manda pro Whisper (Groq ou OpenAI).</p></div>
-  </div>
+<span class="chip">Como funciona</span>
+<h2>Legenda primeiro, download só do necessário</h2>
+<p class="sub">A prioridade é gastar o mínimo: no modo <code>transcript</code>, uma URL legendada volta sem baixar vídeo nenhum. Quando precisa de frames, baixa e extrai só o que o run pede.</p>
+<div class="flow">
+<span>URL / arquivo + pergunta</span><span class="arr">→</span>
+<span>yt-dlp · legendas</span><span class="arr">→</span>
+<span>ffmpeg · frames</span><span class="arr">→</span>
+<span>dedup</span><span class="arr">→</span>
+<span>transcript</span><span class="arr">→</span>
+<span>Claude Read</span><span class="arr">→</span>
+<span>resposta + timestamps</span><span class="arr">→</span>
+<span>cleanup</span>
+</div>
+<div class="grid g4" style="margin-top:26px">
+<div class="card"><h3>1 · Download</h3><p><code>yt-dlp</code> checa legendas antes de tudo. Se existirem (e no modo transcript), nada de vídeo é baixado.</p></div>
+<div class="card"><h3>2 · Frames</h3><p><code>ffmpeg</code> extrai keyframes rápidos (<code>efficient</code>) ou frames por corte de cena (<code>balanced</code>), 512px, 2 fps máx. Em <code>efficient</code>, só puxa os keyframes que o próprio vídeo já guarda a cada ~1s (<code>-skip_frame nokey</code>) — sem redecodificar e comparar quadro a quadro, por isso é bem mais rápido que a varredura de cena completa.</p></div>
+<div class="card"><h3>3 · Dedup</h3><p>Cada frame vira uma miniatura e é comparado com a última mantida; diferença de pixel abaixo do limiar descarta o quadro (slide parado, tela estática) antes de contar o orçamento — só paga por frame que muda de verdade.</p></div>
+<div class="card"><h3>4 · Transcript</h3><p>Legendas nativas (grátis) primeiro; se faltarem, extrai um áudio mono 16 kHz e manda pro Whisper (Groq ou OpenAI).</p></div>
+</div>
 </div></section>
-
 <section id="pre"><div class="wrap">
-  <span class="chip">Pré-requisitos</span>
-  <h2>Duas dependências — e uma chave opcional</h2>
-  <p class="sub">As legendas cobrem a maioria dos vídeos públicos de graça. A chave Whisper só entra quando o vídeo genuinamente não tem legenda (arquivos locais, alguns TikToks/Vimeos).</p>
-  <div class="grid g2">
-    <div class="card"><h3>⚙️ yt-dlp + ffmpeg</h3><p>Instalam no primeiro run. No macOS auto via <code>brew</code>; Linux/Windows imprimem o comando exato. O preflight é um lookup &lt;100 ms nas próximas vezes.</p><pre><span class="c"># preflight + instalador (idempotente)</span>
+<span class="chip">Pré-requisitos</span>
+<h2>Duas dependências — e uma chave opcional</h2>
+<p class="sub">As legendas cobrem a maioria dos vídeos públicos de graça. A chave Whisper só entra quando o vídeo genuinamente não tem legenda (arquivos locais, alguns TikToks/Vimeos).</p>
+<div class="grid g2">
+<div class="card"><h3>⚙️ yt-dlp + ffmpeg</h3><p>Instalam no primeiro run. No macOS auto via <code>brew</code>; Linux/Windows imprimem o comando exato. O preflight é um lookup &lt;100 ms nas próximas vezes.</p><pre><span class="c"># preflight + instalador (idempotente)</span>
 <span class="k">python3</span> scripts/setup.py</pre></div>
-    <div class="card"><h3>🔑 Chave Whisper (opcional)</h3><p><a href="https://console.groq.com/keys" target="_blank" rel="noopener">Groq</a> (preferido — mais barato e rápido, <code>whisper-large-v3</code>) ou <a href="https://platform.openai.com/api-keys" target="_blank" rel="noopener">OpenAI</a> (<code>whisper-1</code>). Sem chave, vídeos sem legenda voltam só com frames.</p><pre><span class="c"># ~/.config/watch/.env  (modo 0600)</span>
+<div class="card"><h3>🔑 Chave Whisper (opcional)</h3><p><a href="https://console.groq.com/keys" rel="noopener" target="_blank">Groq</a> (preferido — mais barato e rápido, <code>whisper-large-v3</code>) ou <a href="https://platform.openai.com/api-keys" rel="noopener" target="_blank">OpenAI</a> (<code>whisper-1</code>). Sem chave, vídeos sem legenda voltam só com frames.</p><pre><span class="c"># ~/.config/watch/.env  (modo 0600)</span>
 GROQ_API_KEY=<span class="s">...</span>
 <span class="c"># ou</span>
 OPENAI_API_KEY=<span class="s">...</span></pre></div>
-  </div>
+</div>
 </div></section>
-
 <section id="guia"><div class="wrap">
-  <span class="chip">Guia de uso · passo a passo</span>
-  <h2>Do install à primeira resposta</h2>
-  <p class="sub">Instale na sua ferramenta, cole uma URL e pergunte. O resto — legenda, download, frames, transcript — o script resolve.</p>
-
-  <div class="step"><div class="b">1</div><div>
-    <h3>Instalar no Claude Code</h3>
-    <p>Adiciona a marketplace local e instala o plugin. Atualiza depois com <code>/plugin update watch@claude-video</code>.</p>
+<span class="chip">Guia de uso · passo a passo</span>
+<h2>Do install à primeira resposta</h2>
+<p class="sub">Instale na sua ferramenta, cole uma URL e pergunte. O resto — legenda, download, frames, transcript — o script resolve.</p>
+<div class="step"><div class="b">1</div><div>
+<h3>Instalar no Claude Code</h3>
+<p>Adiciona a marketplace local e instala o plugin. Atualiza depois com <code>/plugin update watch@claude-video</code>.</p>
 <pre><span class="k">/plugin</span> marketplace add inematds/claude-video
 <span class="k">/plugin</span> install watch@claude-video</pre>
-  </div></div>
-
-  <div class="step"><div class="b">2</div><div>
-    <h3>…ou em Codex, Cursor, Copilot, Gemini CLI (+50)</h3>
-    <p>A CLI de <a href="https://agentskills.io" target="_blank" rel="noopener">Agent Skills</a> detecta os hosts e copia a skill inteira. <code>-g</code> instala global; tire pra escopo do projeto.</p>
+</div></div>
+<div class="step"><div class="b">2</div><div>
+<h3>…ou em Codex, Cursor, Copilot, Gemini CLI (+50)</h3>
+<p>A CLI de <a href="https://agentskills.io" rel="noopener" target="_blank">Agent Skills</a> detecta os hosts e copia a skill inteira. <code>-g</code> instala global; tire pra escopo do projeto.</p>
 <pre><span class="k">npx</span> skills add inematds/claude-video -g  <span class="c"># global no seu usuário</span></pre>
-  </div></div>
-
-  <div class="step"><div class="b">3</div><div>
-    <h3>Assistir</h3>
-    <p>Fonte (URL ou caminho) + a pergunta. Sem pergunta, ele resume. Se não perguntar nada, vem um resumo com estrutura e momentos-chave.</p>
+</div></div>
+<div class="step"><div class="b">3</div><div>
+<h3>Assistir</h3>
+<p>Fonte (URL ou caminho) + a pergunta. Sem pergunta, ele resume. Se não perguntar nada, vem um resumo com estrutura e momentos-chave.</p>
 <pre><span class="k">/watch</span> <span class="s">https://youtu.be/dQw4w9WgXcQ</span> o que acontece no minuto 0:30?
 <span class="k">/watch</span> <span class="s">~/Movies/screen-recording.mp4</span> quando a UI quebra?
 <span class="k">/watch</span> <span class="s">https://www.tiktok.com/@user/video/123</span> resume isso</pre>
-  </div></div>
-
-  <div class="step"><div class="b">4</div><div>
-    <h3>Focar um trecho (mais frames, menos tokens)</h3>
-    <p>Quando a pergunta é sobre um momento, passe <code>--start</code>/<code>--end</code> (aceita <code>SS</code>, <code>MM:SS</code>, <code>HH:MM:SS</code>). O orçamento de frames fica mais denso e o transcript é filtrado pro mesmo intervalo.</p>
+</div></div>
+<div class="step"><div class="b">4</div><div>
+<h3>Focar um trecho (mais frames, menos tokens)</h3>
+<p>Quando a pergunta é sobre um momento, passe <code>--start</code>/<code>--end</code> (aceita <code>SS</code>, <code>MM:SS</code>, <code>HH:MM:SS</code>). O orçamento de frames fica mais denso e o transcript é filtrado pro mesmo intervalo.</p>
 <pre><span class="k">/watch</span> <span class="s">$URL</span> --start 2:15 --end 2:45   <span class="c"># zoom em 30 s a 2 fps</span>
 <span class="k">/watch</span> video.mp4 --start 50 --end 60   <span class="c"># últimos 10 s</span>
 <span class="k">/watch</span> <span class="s">$URL</span> --start 1:12:00           <span class="c"># de 1h12m até o fim</span></pre>
-  </div></div>
-
-  <div class="step"><div class="b">5</div><div>
-    <h3>Ajustar o detalhe (um dial)</h3>
-    <p>Troca fidelidade por velocidade e custo de token. Default <code>balanced</code>. Fixe o padrão com <code>WATCH_DETAIL=</code> no <code>~/.config/watch/.env</code>.</p>
-    <div class="tblwrap"><table class="tbl">
-      <thead><tr><th>Modo</th><th>Frames</th><th>Uso</th></tr></thead>
-      <tbody>
-        <tr><td><code>transcript</code></td><td>0</td><td>Só transcript; pula o download quando há legenda.</td></tr>
-        <tr><td><code>efficient</code></td><td>até 50</td><td>Keyframes rápidos (~0,5 s de extração).</td></tr>
-        <tr><td><code>balanced</code></td><td>até 100</td><td>Frames por corte de cena. Padrão.</td></tr>
-        <tr><td><code>token-burner</code></td><td>sem teto</td><td>Cena, sem cap — cobertura máxima em vídeo longo.</td></tr>
-      </tbody>
-    </table></div>
+</div></div>
+<div class="step"><div class="b">5</div><div>
+<h3>Ajustar o detalhe (um dial)</h3>
+<p>Troca fidelidade por velocidade e custo de token. Default <code>balanced</code>. Fixe o padrão com <code>WATCH_DETAIL=</code> no <code>~/.config/watch/.env</code>.</p>
+<div class="tblwrap"><table class="tbl">
+<thead><tr><th>Modo</th><th>Frames</th><th>Uso</th></tr></thead>
+<tbody>
+<tr><td><code>transcript</code></td><td>0</td><td>Só transcript; pula o download quando há legenda.</td></tr>
+<tr><td><code>efficient</code></td><td>até 50</td><td>Keyframes rápidos (~0,5 s de extração).</td></tr>
+<tr><td><code>balanced</code></td><td>até 100</td><td>Frames por corte de cena. Padrão.</td></tr>
+<tr><td><code>token-burner</code></td><td>sem teto</td><td>Cena, sem cap — cobertura máxima em vídeo longo.</td></tr>
+</tbody>
+</table></div>
 <pre style="margin-top:16px"><span class="k">/watch</span> <span class="s">$URL</span> --detail efficient          <span class="c"># passe rápido de 50 keyframes</span>
 <span class="k">/watch</span> <span class="s">$URL</span> --resolution 1024           <span class="c"># ler texto na tela (slides, terminal)</span></pre>
-  </div></div>
-
-  <div class="step"><div class="b">6</div><div>
-    <h3>Pegar o frame que a fala aponta ("olha aqui")</h3>
-    <p>Seleção por cena/keyframe pode passar batido quando alguém aponta pra tela sem cortar de cena — "olha aqui", "como vocês estão vendo", "repara nisso". O agente lê o transcript primeiro, identifica esses momentos e roda de novo com <code>--timestamps</code> pra forçar um frame exatamente ali. É julgamento do agente, não regex — e os frames de pista entram somados ao que o <code>--detail</code> já tinha escolhido, sem serem descartados pelo corte de orçamento.</p>
+</div></div>
+<div class="step"><div class="b">6</div><div>
+<h3>Pegar o frame que a fala aponta ("olha aqui")</h3>
+<p>Seleção por cena/keyframe pode passar batido quando alguém aponta pra tela sem cortar de cena — "olha aqui", "como vocês estão vendo", "repara nisso". O agente lê o transcript primeiro, identifica esses momentos e roda de novo com <code>--timestamps</code> pra forçar um frame exatamente ali. É julgamento do agente, não regex — e os frames de pista entram somados ao que o <code>--detail</code> já tinha escolhido, sem serem descartados pelo corte de orçamento.</p>
 <pre><span class="k">/watch</span> <span class="s">$URL</span> --detail transcript         <span class="c"># 1. transcript com timestamps primeiro</span>
 <span class="k">/watch</span> <span class="s">$URL</span> --timestamps 4:32,7:10,9:55 <span class="c"># 2. re-roda nos momentos em que a fala aponta pra tela</span></pre>
-  </div></div>
+</div></div>
 </div></section>
-
 <section id="exemplos"><div class="wrap">
-  <span class="chip">Exemplos</span>
-  <h2>Pra que as pessoas realmente usam</h2>
-  <p class="sub">O ganho aparece quando o <em>como</em> importa tanto quanto o <em>o quê</em> — hooks de vídeo, bugs em gravação de tela, resumo de coisa longa.</p>
-  <div class="grid g2">
-    <div class="card"><h3>🎯 Analisar conteúdo alheio</h3><p>Olha os primeiros frames + a abertura do transcript e destrincha a estrutura de um viral, criativo de anúncio ou intro de podcast.</p><pre><span class="k">/watch</span> <span class="s">$URL</span> qual foi o hook de abertura?</pre></div>
-    <div class="card"><h3>🐞 Diagnosticar um bug</h3><p>Recebeu uma gravação de tela de algo quebrado? Ele acha o frame onde o problema aparece e descreve — muitas vezes pega a causa.</p><pre><span class="k">/watch</span> bug-repro.mov o que está dando errado?</pre></div>
-    <div class="card"><h3>📝 Resumir um vídeo</h3><p>Puxa estrutura, momentos-chave e o que foi de fato dito e mostrado. Mais rápido que assistir em 2×.</p><pre><span class="k">/watch</span> <span class="s">$URL</span> resume isso</pre></div>
-    <div class="card"><h3>✂️ Cortar o hype de um update</h3><p>Reduz um "game-changer" às poucas coisas que importam — substância sem dez minutos de intro e overselling.</p><pre><span class="k">/watch</span> <span class="s">$URL</span> o que é NOVO de verdade — pula o hype</pre></div>
-  </div>
+<span class="chip">Exemplos</span>
+<h2>Pra que as pessoas realmente usam</h2>
+<p class="sub">O ganho aparece quando o <em>como</em> importa tanto quanto o <em>o quê</em> — hooks de vídeo, bugs em gravação de tela, resumo de coisa longa.</p>
+<div class="grid g2">
+<div class="card"><h3>🎯 Analisar conteúdo alheio</h3><p>Olha os primeiros frames + a abertura do transcript e destrincha a estrutura de um viral, criativo de anúncio ou intro de podcast.</p><pre><span class="k">/watch</span> <span class="s">$URL</span> qual foi o hook de abertura?</pre></div>
+<div class="card"><h3>🐞 Diagnosticar um bug</h3><p>Recebeu uma gravação de tela de algo quebrado? Ele acha o frame onde o problema aparece e descreve — muitas vezes pega a causa.</p><pre><span class="k">/watch</span> bug-repro.mov o que está dando errado?</pre></div>
+<div class="card"><h3>📝 Resumir um vídeo</h3><p>Puxa estrutura, momentos-chave e o que foi de fato dito e mostrado. Mais rápido que assistir em 2×.</p><pre><span class="k">/watch</span> <span class="s">$URL</span> resume isso</pre></div>
+<div class="card"><h3>✂️ Cortar o hype de um update</h3><p>Reduz um "game-changer" às poucas coisas que importam — substância sem dez minutos de intro e overselling.</p><pre><span class="k">/watch</span> <span class="s">$URL</span> o que é NOVO de verdade — pula o hype</pre></div>
+</div>
 </div></section>
-
 <section id="roadmap"><div class="wrap">
-  <span class="chip">Recursos · v0.2.0</span>
-  <h2>O que já está no ar</h2>
-  <p class="sub">Skill self-contained, pura-stdlib. Cada linha abaixo é comportamento que existe hoje — não roadmap futuro.</p>
-  <div class="phase"><div class="tag">Legendas</div><div class="d"><strong>Transcript grátis primeiro</strong><span>yt-dlp puxa legendas manuais ou automáticas da própria fonte. No modo <code>transcript</code>, URL legendada nem baixa vídeo.</span></div></div>
-  <div class="phase"><div class="tag">Whisper</div><div class="d"><strong>Fallback com auto-chunking</strong><span>Sem legenda, extrai áudio mono 16 kHz e transcreve no Groq (preferido) ou OpenAI. Áudio acima de 25 MB é fatiado e remontado automaticamente.</span></div></div>
-  <div class="phase"><div class="tag">Frames</div><div class="d"><strong>Dial de 4 modos + 2 fps máx</strong><span><code>transcript</code>, <code>efficient</code> (keyframes), <code>balanced</code> (cena) e <code>token-burner</code> (sem cap). Orçamento de frames por duração pra não estourar o contexto.</span></div></div>
-  <div class="phase"><div class="tag">Dedup</div><div class="d"><strong>Colapsa quadros quase-idênticos</strong><span>Passe de diferença de brilho contra o último frame mantido; slide parado ou tela estática não gasta o orçamento. <code>--no-dedup</code> desliga.</span></div></div>
-  <div class="phase"><div class="tag">Foco</div><div class="d"><strong>Janela com <code>--start</code>/<code>--end</code></strong><span>Orçamento mais denso no trecho pedido; transcript filtrado pro mesmo intervalo; timestamps sempre em tempo absoluto do vídeo.</span></div></div>
-  <div class="phase"><div class="tag">Pistas</div><div class="d"><strong>Frames por pista dedítica com <code>--timestamps</code></strong><span>O agente lê o transcript, identifica onde a fala aponta pra tela ("olha aqui", "como vocês veem") e força um frame ali — somado ao que a seleção por cena já pegou, sem ser descartado pelo corte de orçamento.</span></div></div>
-  <div class="phase"><div class="tag">Multi-host</div><div class="d"><strong>Uma skill, +50 hosts</strong><span>Claude Code (plugin/marketplace), Codex, Cursor, Copilot, Gemini CLI via <code>npx skills</code>, e claude.ai por bundle <code>.skill</code>.</span></div></div>
+<span class="chip">Recursos · v0.2.0</span>
+<h2>O que já está no ar</h2>
+<p class="sub">Skill self-contained, pura-stdlib. Cada linha abaixo é comportamento que existe hoje — não roadmap futuro.</p>
+<div class="phase"><div class="tag">Legendas</div><div class="d"><strong>Transcript grátis primeiro</strong><span>yt-dlp puxa legendas manuais ou automáticas da própria fonte. No modo <code>transcript</code>, URL legendada nem baixa vídeo.</span></div></div>
+<div class="phase"><div class="tag">Whisper</div><div class="d"><strong>Fallback com auto-chunking</strong><span>Sem legenda, extrai áudio mono 16 kHz e transcreve no Groq (preferido) ou OpenAI. Áudio acima de 25 MB é fatiado e remontado automaticamente.</span></div></div>
+<div class="phase"><div class="tag">Frames</div><div class="d"><strong>Dial de 4 modos + 2 fps máx</strong><span><code>transcript</code>, <code>efficient</code> (keyframes), <code>balanced</code> (cena) e <code>token-burner</code> (sem cap). Orçamento de frames por duração pra não estourar o contexto.</span></div></div>
+<div class="phase"><div class="tag">Dedup</div><div class="d"><strong>Colapsa quadros quase-idênticos</strong><span>Passe de diferença de brilho contra o último frame mantido; slide parado ou tela estática não gasta o orçamento. <code>--no-dedup</code> desliga.</span></div></div>
+<div class="phase"><div class="tag">Foco</div><div class="d"><strong>Janela com <code>--start</code>/<code>--end</code></strong><span>Orçamento mais denso no trecho pedido; transcript filtrado pro mesmo intervalo; timestamps sempre em tempo absoluto do vídeo.</span></div></div>
+<div class="phase"><div class="tag">Pistas</div><div class="d"><strong>Frames por pista dedítica com <code>--timestamps</code></strong><span>O agente lê o transcript, identifica onde a fala aponta pra tela ("olha aqui", "como vocês veem") e força um frame ali — somado ao que a seleção por cena já pegou, sem ser descartado pelo corte de orçamento.</span></div></div>
+<div class="phase"><div class="tag">Multi-host</div><div class="d"><strong>Uma skill, +50 hosts</strong><span>Claude Code (plugin/marketplace), Codex, Cursor, Copilot, Gemini CLI via <code>npx skills</code>, e claude.ai por bundle <code>.skill</code>.</span></div></div>
 </div></section>
-
 <footer>
-  <div class="wrap">
-    <div class="pill">Python stdlib</div><div class="pill">yt-dlp</div><div class="pill">ffmpeg</div><div class="pill">Whisper</div><div class="pill">Agent Skills</div><div class="pill">MIT</div>
-    <p style="margin-top:18px">/watch · dê ao seu agente a capacidade de assistir vídeo ·
+<div class="wrap">
+<div class="pill">Python stdlib</div><div class="pill">yt-dlp</div><div class="pill">ffmpeg</div><div class="pill">Whisper</div><div class="pill">Agent Skills</div><div class="pill">MIT</div>
+<p style="margin-top:18px">/watch · dê ao seu agente a capacidade de assistir vídeo ·
       <a href="https://github.com/inematds/claude-video">github.com/inematds/claude-video</a> ·
       <a href="https://inema.club">INEMA.CLUB</a></p>
-  </div>
+</div>
 </footer>
-
 <script>
   (function(){
     var KEY='watch-theme';
